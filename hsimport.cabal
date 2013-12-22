@@ -1,0 +1,29 @@
+Name:          hsimport
+Version:       0.1
+License:       BSD3
+License-file:  LICENSE
+Author:        Daniel Trstenjak
+Maintainer:    daniel.trstenjak@gmail.com
+Build-Type:    Simple
+Category:      Utils
+Cabal-Version: >=1.6
+Synopsis:      A command line programm for extending the import list of a haskell source file.
+Description:   A command line programm for extending the import list of a haskell source file.
+
+source-repository head
+  type:     git
+  location: https://github.com/dan-t/hs-import
+
+Executable hsimport
+  Main-is:       Main.hs
+  other-modules: HsImport
+                 HsImport.Args
+                 HsImport.ImportSpec
+                 HsImport.Main
+  ghc-options:   -funbox-strict-fields
+  Build-Depends: base >= 3 && < 5,
+                 cmdargs >= 0.10.5 && < 0.11,
+                 haskell-src-exts >= 1.14.0 && < 1.15,
+                 lens >= 3.9.2 && < 4.0,
+                 mtl >= 2.1.2 && < 2.2,
+                 text >= 0.11.3.1 && < 0.12
