@@ -7,6 +7,7 @@ module HsImport.Main
 import Control.Applicative
 import Control.Lens
 import Data.Maybe
+import System.Directory (copyFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Language.Haskell.Exts as HS
@@ -29,8 +30,9 @@ hsImport spec =
 
            modifyImports importDecl (spec ^. sourceFile) (outputFile spec) numTakes numDrops
 
-        NoImportChange -> return ()
-
+        NoImportChange
+           | Just saveTo <- spec ^. saveToFile -> copyFile (spec ^. sourceFile) saveTo
+           | otherwise                         -> return ()
    where
       modifyImports importDecl inputFile outputFile numTakes numDrops = do
          file <- TIO.readFile inputFile

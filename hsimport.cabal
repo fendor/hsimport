@@ -28,4 +28,5 @@ Executable hsimport
                  mtl >= 2.1.2 && < 2.2,
                  text >= 0.11.3.1 && < 0.12,
                  split >= 0.2.2 && < 0.3,
-                 attoparsec >= 0.10.4.0 && < 0.11
+                 attoparsec >= 0.10.4.0 && < 0.11,
+                 directory >= 1.2.0.1 && < 1.3
