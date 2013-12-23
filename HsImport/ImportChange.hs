@@ -1,6 +1,6 @@
 {-# Language PatternGuards #-}
 
-module HsImport.Imports 
+module HsImport.ImportChange
    ( ImportChange(..)
    , importChange
    ) where
