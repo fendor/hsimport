@@ -29,6 +29,20 @@ moduleTests = testGroup "Module Tests"
 symbolTests :: TestTree
 symbolTests = testGroup "Symbol Tests"
    [ hsImportTest "SymbolTest1" "Foo.Bar" "foo"
+   , hsImportTest "SymbolTest2" "Foo.Bar.Blub" "foo"
+   , hsImportTest "SymbolTest3" "Control.Monad" "when"
+   , hsImportTest "SymbolTest4" "Ugah.Argh2" "argh"
+   , hsImportTest "SymbolTest5" "Control.Monad" "when"
+   , hsImportTest "SymbolTest6" "Control.Monad" "unless"
+   , hsImportTest "SymbolTest7" "Control.Monad" "unless"
+   , hsImportTest "SymbolTest8" "Control.Monad" "unless"
+   , hsImportTest "SymbolTest9" "Control.Monad" "unless"
+   , hsImportTest "SymbolTest10" "Control.Applicative" "<$>"
+   , hsImportTest "SymbolTest11" "Control.Applicative" "<$>"
+   , hsImportTest "SymbolTest12" "Control.Applicative" "<$>"
+   , hsImportTest "SymbolTest13" "Control.Applicative" "<*"
+   , hsImportTest "SymbolTest14" "Control.Applicative" "<*"
+   , hsImportTest "SymbolTest15" "Control.Applicative" "*>"
    ]
 
 
