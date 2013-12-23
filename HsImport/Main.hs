@@ -1,3 +1,4 @@
+{-# Language PatternGuards #-}
 
 module HsImport.Main
    ( hsImport
@@ -14,19 +15,33 @@ import HsImport.ImportSpec
 
 
 hsImport :: ImportSpec -> IO ()
-hsImport spec = do
-   let imports = matchingImports (spec ^. moduleToImport) (spec ^. parsedSrcFile)
-   if null imports
-      then putStrLn "Nothing to do!"
-      else do
-         file <- TIO.readFile (spec ^. sourceFile)
-         let srcLine    = HS.srcLine . HS.importLoc . last $ imports
-             importLine = newImport (spec ^. moduleToImport) (spec ^. symbolToImport)
+hsImport spec =
+   case importChange (spec ^. moduleToImport) (spec ^. symbolToImport) (spec ^. parsedSrcFile) of
+        ReplaceImport importDecl -> do
+           let numDrops = HS.srcLine . HS.importLoc $ importDecl
+               numTakes = max 0 (numDrops - 1)
+
+           modifyImports importDecl (spec ^. sourceFile) (outputFile spec) numTakes numDrops
+
+        AddImport importDecl -> do
+           let numTakes = HS.srcLine . HS.importLoc $ importDecl
+               numDrops = numTakes
+
+           modifyImports importDecl (spec ^. sourceFile) (outputFile spec) numTakes numDrops
+
+        NoImportChange -> return ()
+
+   where
+      modifyImports importDecl inputFile outputFile numTakes numDrops = do
+         file <- TIO.readFile inputFile
+         let srcLine    = HS.srcLine . HS.importLoc $ importDecl
+             importLine = HS.prettyPrint importDecl
              lines_     = lines . T.unpack $ file
-             lines_'    = take srcLine lines_ ++ [importLine] ++ drop srcLine lines_
+             lines_'    = take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
              file'      = T.pack . unlines $ lines_'
 
-         TIO.writeFile (spec ^. sourceFile) file'
-   where
-      newImport mod sym =
-         "import " ++ mod ++ (if isJust sym then " (" ++ fromJust sym ++ ")" else "")
+         TIO.writeFile outputFile file'
+
+      outputFile spec
+         | Just file <- spec ^. saveToFile = file
+         | otherwise                       = spec ^. sourceFile

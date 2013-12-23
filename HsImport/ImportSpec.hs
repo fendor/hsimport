@@ -6,6 +6,7 @@ module HsImport.ImportSpec
    , parsedSrcFile
    , moduleToImport
    , symbolToImport
+   , saveToFile
    , hsImportSpec
    ) where
 
@@ -15,12 +16,13 @@ import qualified Language.Haskell.Exts as HS
 import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
 
-data ImportSpec = ImportSpec {
-  _sourceFile     :: FilePath,
-  _parsedSrcFile  :: HS.Module,
-  _moduleToImport :: String,
-  _symbolToImport :: Maybe String
-  } deriving (Show)  
+data ImportSpec = ImportSpec 
+   { _sourceFile     :: FilePath
+   , _parsedSrcFile  :: HS.Module
+   , _moduleToImport :: String
+   , _symbolToImport :: Maybe String
+   , _saveToFile     :: Maybe FilePath
+   } deriving (Show)  
 
 makeLenses ''ImportSpec
 
@@ -30,11 +32,11 @@ hsImportSpec :: HsImportArgs -> IO (Either Error ImportSpec)
 hsImportSpec args
    | Just error <- checkArgs args = return $ Left error
    | otherwise = do
-      result <- HS.parseFile $ Args.sourceFile args
+      result <- HS.parseFile $ Args.inputSrcFile args
       case result of
            HS.ParseOk modul -> return $ Right $
-              ImportSpec (Args.sourceFile args) modul
-                         (Args.moduleName args) symbolName
+              ImportSpec (Args.inputSrcFile args) modul
+                         (Args.moduleName args) symbolName saveToFile
 
            HS.ParseFailed _ error -> return $ Left error
 
@@ -44,7 +46,12 @@ hsImportSpec args
               ""  -> Nothing
               sym -> Just sym
 
+      saveToFile =
+         case Args.outputSrcFile args of
+              "" -> Nothing
+              fp -> Just fp
+
       checkArgs args
-         | null . Args.sourceFile $ args = Just "Missing source file!"
-         | null . Args.moduleName $ args = Just "Missing module name!"
-         | otherwise                     = Nothing
+         | null . Args.inputSrcFile $ args = Just "Missing source file!"
+         | null . Args.moduleName $ args   = Just "Missing module name!"
+         | otherwise                       = Nothing
