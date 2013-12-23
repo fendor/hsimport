@@ -6,7 +6,7 @@ module HsImport.ImportSpec
    , parsedSrcFile
    , moduleToImport
    , symbolToImport
-   , mkImportSpec
+   , hsImportSpec
    ) where
 
 import Control.Lens
@@ -26,8 +26,8 @@ makeLenses ''ImportSpec
 
 
 type Error = String
-mkImportSpec :: HsImportArgs -> IO (Either Error ImportSpec)
-mkImportSpec args
+hsImportSpec :: HsImportArgs -> IO (Either Error ImportSpec)
+hsImportSpec args
    | Just error <- checkArgs args = return $ Left error
    | otherwise = do
       result <- HS.parseFile $ Args.sourceFile args
