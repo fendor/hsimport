@@ -10,6 +10,7 @@ import Data.List (find)
 import Data.List.Split (splitOn)
 import Control.Lens
 import qualified Language.Haskell.Exts as HS
+import qualified Data.Attoparsec.Text as A
 
 data ImportChange = ReplaceImport HS.ImportDecl
                   | AddImport HS.ImportDecl
@@ -33,7 +34,7 @@ importChange moduleName (Just symbolName) module_
 
    where
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolName =
-         id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ HS.Ident symbolName])}
+         id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ hsName symbolName])}
 
 importChange moduleName Nothing module_
    | matching@(_:_) <- matchingImports moduleName module_ =
@@ -127,4 +128,12 @@ importDecl srcLoc moduleName = HS.ImportDecl
 
 importDeclWithSymbol :: HS.SrcLoc -> String -> String -> HS.ImportDecl
 importDeclWithSymbol srcLoc moduleName symbolName = 
-   (importDecl srcLoc moduleName) { HS.importSpecs = Just (False, [HS.IVar $ HS.Ident symbolName]) }
+   (importDecl srcLoc moduleName) { HS.importSpecs = Just (False, [HS.IVar $ hsName symbolName]) }
+
+
+hsName :: String -> HS.Name
+hsName symbolName
+   | isSymbol  = HS.Symbol symbolName
+   | otherwise = HS.Ident symbolName
+   where
+      isSymbol = any (A.notInClass "a-zA-Z0-9_") symbolName
