@@ -110,8 +110,8 @@ symbolImported symbolName import_ = hasSymbol symbolName import_
 
 hasImportedSymbols :: HS.ImportDecl -> Bool
 hasImportedSymbols import_
-   | (HS.ImportDecl {HS.importSpecs = Just (False, _)}) <- import_ = True
-   | otherwise                                                     = False
+   | (HS.ImportDecl {HS.importSpecs = Just (False, (_:_))}) <- import_ = True
+   | otherwise                                                         = False
 
 
 importDecl :: HS.SrcLoc -> String -> HS.ImportDecl
