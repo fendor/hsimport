@@ -11,7 +11,6 @@ module HsImport.ImportSpec
    ) where
 
 import Control.Lens
-import Control.Monad.State
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
