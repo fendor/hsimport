@@ -4,9 +4,7 @@ module HsImport.Main
    ( hsImport
    ) where
 
-import Control.Applicative
 import Control.Lens
-import Data.Maybe
 import System.Directory (copyFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -36,8 +34,7 @@ hsImport spec =
    where
       modifyImports importDecl inputFile outputFile numTakes numDrops = do
          file <- TIO.readFile inputFile
-         let srcLine    = HS.srcLine . HS.importLoc $ importDecl
-             importLine = HS.prettyPrint importDecl
+         let importLine = HS.prettyPrint importDecl
              lines_     = lines . T.unpack $ file
              lines_'    = take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
              file'      = T.pack . unlines $ lines_'
