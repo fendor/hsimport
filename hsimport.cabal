@@ -20,7 +20,7 @@ Executable hsimport
                  HsImport.Args
                  HsImport.ImportSpec
                  HsImport.Main
-  ghc-options:   -funbox-strict-fields
+  ghc-options:   -W -funbox-strict-fields
   Build-Depends: base >= 3 && < 5,
                  cmdargs >= 0.10.5 && < 0.11,
                  haskell-src-exts >= 1.14.0 && < 1.15,
@@ -33,7 +33,7 @@ Executable hsimport
 
 Executable hsimport-tests
   Main-is:       tests/Main.hs
-  ghc-options:   -funbox-strict-fields
+  ghc-options:   -W -funbox-strict-fields
   Build-Depends: base >= 3 && < 5,
                  tasty >= 0.6 && < 0.7,
                  tasty-golden >= 2.2.0.1 && < 2.3,
