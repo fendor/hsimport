@@ -12,7 +12,7 @@ Description:   A command line programm for extending the import list of a haskel
 
 source-repository head
   type:     git
-  location: https://github.com/dan-t/hs-import
+  location: https://github.com/dan-t/hsimport
 
 Executable hsimport
   Main-is:       Main.hs
