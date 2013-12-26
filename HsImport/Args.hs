@@ -25,7 +25,7 @@ hsImportArgs = cmdArgs $ HsImportArgs
    }
    &= program "hsimport"
    &= summary summaryInfo
-   &= help "A command line program for extending the import list of a haskell source file."
+   &= help "A command line program for extending the import list of a Haskell source file."
    &= helpArg [explicit, name "help", name "h"]
    &= versionArg [explicit, name "version", name "v", summary versionInfo]
    where

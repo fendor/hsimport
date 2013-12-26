@@ -7,8 +7,8 @@ Maintainer:    daniel.trstenjak@gmail.com
 Build-Type:    Simple
 Category:      Utils
 Cabal-Version: >=1.6
-Synopsis:      A command line programm for extending the import list of a haskell source file.
-Description:   A command line programm for extending the import list of a haskell source file.
+Synopsis:      A command line program for extending the import list of a Haskell source file.
+Description:   A command line program for extending the import list of a Haskell source file.
 
 source-repository head
   type:     git
