@@ -14,7 +14,8 @@ tests = testGroup "Tests" [moduleTests, symbolTests]
 
 moduleTests :: TestTree
 moduleTests = testGroup "Module Tests"
-   [ hsImportTest "ModuleTest1" "Foo.Bar" ""
+   [ hsImportTest "ModuleTest0" "Foo.Bar" "" 
+   , hsImportTest "ModuleTest1" "Foo.Bar" ""
    , hsImportTest "ModuleTest2" "Foo.Bar.Blub" ""
    , hsImportTest "ModuleTest3" "Control.Monad" ""
    , hsImportTest "ModuleTest4" "Ugah.Argh2" ""
@@ -28,7 +29,8 @@ moduleTests = testGroup "Module Tests"
 
 symbolTests :: TestTree
 symbolTests = testGroup "Symbol Tests"
-   [ hsImportTest "SymbolTest1" "Foo.Bar" "foo"
+   [ hsImportTest "SymbolTest0" "Foo.Bar" "foo"
+   , hsImportTest "SymbolTest1" "Foo.Bar" "foo"
    , hsImportTest "SymbolTest2" "Foo.Bar.Blub" "foo"
    , hsImportTest "SymbolTest3" "Control.Monad" "when"
    , hsImportTest "SymbolTest4" "Ugah.Argh2" "argh"
