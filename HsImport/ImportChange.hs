@@ -68,6 +68,7 @@ bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
         Just (idx, _) -> Just $ imports !! idx
         _             -> Nothing
    where
+      computeMatches :: Int -> Maybe (Int, Int) -> [String] -> Maybe (Int, Int)
       computeMatches idx matches mod =
          let num' = numMatches splittedMod mod
              in case matches of
