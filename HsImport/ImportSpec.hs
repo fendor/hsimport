@@ -38,7 +38,7 @@ hsImportSpec args
               ImportSpec (Args.inputSrcFile args) modul
                          (Args.moduleName args) symbolName saveToFile
 
-           HS.ParseFailed _ error -> return $ Left error
+           HS.ParseFailed srcLoc error -> return $ Left (show srcLoc ++ error)
 
    where
       symbolName =
