@@ -29,5 +29,5 @@ hsImportArgs = cmdArgs $ HsImportArgs
    &= helpArg [explicit, name "help", name "h"]
    &= versionArg [explicit, name "version", name "v", summary versionInfo]
    where
-      versionInfo = "hsimport version 0.1.1"
+      versionInfo = "hsimport version 0.2"
       summaryInfo = ""
