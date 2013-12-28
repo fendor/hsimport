@@ -62,12 +62,14 @@ symbolTests = testGroup "Symbol Tests"
 
 hsImportTest :: String -> String -> String -> TestTree
 hsImportTest testName moduleName symbolName =
-   goldenVsFile testName goldenFile outputFile command
+   goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
         handle <- runCommand $ "hsimport " ++ params
         waitForProcess handle
         return ()
+
+      diff ref new = ["diff", "-u", ref, new]
 
       params      = intercalate " " [moduleParam, symbolParam, outputParam, inputFile]
       moduleParam = "-m '" ++ moduleName ++ "'"
