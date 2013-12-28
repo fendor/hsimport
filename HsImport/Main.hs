@@ -16,31 +16,38 @@ import HsImport.ImportSpec
 hsImport :: ImportSpec -> IO ()
 hsImport spec =
    case importChange (spec ^. moduleToImport) (spec ^. symbolToImport) (spec ^. parsedSrcFile) of
-        ReplaceImport importDecl -> do
-           let numDrops = HS.srcLine . HS.importLoc $ importDecl
-               numTakes = max 0 (numDrops - 1)
+        ReplaceImport importDecl ->
+           modifyLines $ \lines_ ->
+              let importLine = HS.prettyPrint importDecl
+                  numDrops   = HS.srcLine . HS.importLoc $ importDecl
+                  numTakes   = max 0 (numDrops - 1)
+                  in take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
 
-           modifyImports importDecl (spec ^. sourceFile) (outputFile spec) numTakes numDrops
+        AddImport importDecl ->
+           modifyLines $ \lines_ ->
+              let importLine = HS.prettyPrint importDecl
+                  numTakes   = HS.srcLine . HS.importLoc $ importDecl
+                  numDrops   = numTakes
+                  in take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
 
-        AddImport importDecl -> do
-           let numTakes = HS.srcLine . HS.importLoc $ importDecl
-               numDrops = numTakes
-
-           modifyImports importDecl (spec ^. sourceFile) (outputFile spec) numTakes numDrops
+        AddImportAtEnd importDecl ->
+           modifyLines $ \lines_ ->
+              let importLine = HS.prettyPrint importDecl
+                  in lines_ ++ [importLine]
 
         NoImportChange
            | Just saveTo <- spec ^. saveToFile -> copyFile (spec ^. sourceFile) saveTo
            | otherwise                         -> return ()
    where
-      modifyImports importDecl inputFile outputFile numTakes numDrops = do
-         file <- TIO.readFile inputFile
-         let importLine = HS.prettyPrint importDecl
-             lines_     = lines . T.unpack $ file
-             lines_'    = take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
-             file'      = T.pack . unlines $ lines_'
+      modifyLines f = do
+         file <- TIO.readFile $ spec ^. sourceFile
+         let lines_  = lines . T.unpack $ file
+             lines_' = f lines_
+             file'   = T.pack . unlines $ lines_'
 
-         TIO.writeFile outputFile file'
+         TIO.writeFile (outputFile spec) file'
 
-      outputFile spec
-         | Just file <- spec ^. saveToFile = file
-         | otherwise                       = spec ^. sourceFile
+         where
+            outputFile spec
+               | Just file <- spec ^. saveToFile = file
+               | otherwise                       = spec ^. sourceFile

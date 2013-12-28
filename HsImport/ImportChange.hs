@@ -14,6 +14,7 @@ import qualified Data.Attoparsec.Text as A
 
 data ImportChange = ReplaceImport HS.ImportDecl
                   | AddImport HS.ImportDecl
+                  | AddImportAtEnd HS.ImportDecl
                   | NoImportChange
                   deriving (Show)
 
@@ -30,8 +31,10 @@ importChange moduleName (Just symbolName) module_
    | Just bestMatch <- bestMatchingImport moduleName module_ =
       AddImport $ importDeclWithSymbol (HS.importLoc bestMatch) moduleName symbolName
 
-   | otherwise = AddImport $ importDeclWithSymbol (lastImportSrcLoc module_) moduleName symbolName
-
+   | otherwise =
+      case srcLocForNewImport module_ of
+           Just srcLoc -> AddImport $ importDeclWithSymbol srcLoc moduleName symbolName
+           Nothing     -> AddImportAtEnd $ importDeclWithSymbol emptySrcLoc moduleName symbolName
    where
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolName =
          id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ hsName symbolName])}
@@ -45,7 +48,10 @@ importChange moduleName Nothing module_
    | Just bestMatch <- bestMatchingImport moduleName module_ =
       AddImport $ importDecl (HS.importLoc bestMatch) moduleName
 
-   | otherwise = AddImport $ importDecl (lastImportSrcLoc module_) moduleName
+   | otherwise =
+      case srcLocForNewImport module_ of
+           Just srcLoc -> AddImport $ importDecl srcLoc moduleName
+           Nothing     -> AddImportAtEnd $ importDecl emptySrcLoc moduleName
 
 
 matchingImports :: String -> HS.Module -> [HS.ImportDecl]
@@ -84,12 +90,6 @@ bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
       splittedMods = [ splitOn "." name 
                      | HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
                      ]  
-
-
-lastImportSrcLoc :: HS.Module -> HS.SrcLoc
-lastImportSrcLoc (HS.Module srcLoc _ _ _ _ imports _)
-   | [] <- imports = srcLoc
-   | otherwise     = HS.importLoc . last $ imports
 
 
 entireModuleImported :: HS.ImportDecl -> Bool
@@ -137,3 +137,52 @@ hsName symbolName
    | otherwise = HS.Ident symbolName
    where
       isSymbol = any (A.notInClass "a-zA-Z0-9_") symbolName
+
+
+srcLocForNewImport :: HS.Module -> Maybe HS.SrcLoc
+srcLocForNewImport (HS.Module modSrcLoc _ _ _ _ imports decls)
+   | not $ null imports = Just (HS.importLoc $ last imports)
+
+   | (decl:_)  <- decls
+   , Just sLoc <- declSrcLoc decl
+   , HS.srcLine sLoc >= HS.srcLine modSrcLoc
+   = Just sLoc {HS.srcLine = max 0 (HS.srcLine sLoc - 1)}
+
+   | otherwise = Nothing
+
+
+declSrcLoc :: HS.Decl -> Maybe HS.SrcLoc
+declSrcLoc decl =
+   case decl of
+        HS.TypeDecl srcLoc _ _ _          -> Just srcLoc
+        HS.TypeFamDecl srcLoc _ _ _       -> Just srcLoc
+        HS.DataDecl srcLoc _ _ _ _ _ _    -> Just srcLoc
+        HS.GDataDecl srcLoc _ _ _ _ _ _ _ -> Just srcLoc
+        HS.DataFamDecl srcLoc _ _ _ _     -> Just srcLoc
+        HS.TypeInsDecl srcLoc _ _         -> Just srcLoc
+        HS.DataInsDecl srcLoc _ _ _ _     -> Just srcLoc
+        HS.GDataInsDecl srcLoc _ _ _ _ _  -> Just srcLoc
+        HS.ClassDecl srcLoc _ _ _ _ _     -> Just srcLoc
+        HS.InstDecl srcLoc _ _ _ _        -> Just srcLoc
+        HS.DerivDecl srcLoc _ _ _         -> Just srcLoc
+        HS.InfixDecl srcLoc _ _ _         -> Just srcLoc
+        HS.DefaultDecl srcLoc _           -> Just srcLoc
+        HS.SpliceDecl srcLoc _            -> Just srcLoc
+        HS.TypeSig srcLoc _ _             -> Just srcLoc
+        HS.FunBind _                      -> Nothing
+        HS.PatBind srcLoc _ _ _ _         -> Just srcLoc
+        HS.ForImp srcLoc _ _ _ _ _        -> Just srcLoc
+        HS.ForExp srcLoc _ _ _ _          -> Just srcLoc
+        HS.RulePragmaDecl srcLoc _        -> Just srcLoc
+        HS.DeprPragmaDecl srcLoc _        -> Just srcLoc
+        HS.WarnPragmaDecl srcLoc _        -> Just srcLoc
+        HS.InlineSig srcLoc _ _ _         -> Just srcLoc
+        HS.InlineConlikeSig srcLoc _ _    -> Just srcLoc
+        HS.SpecSig srcLoc _ _ _           -> Just srcLoc
+        HS.SpecInlineSig srcLoc _ _ _ _   -> Just srcLoc
+        HS.InstSig srcLoc _ _ _           -> Just srcLoc
+        HS.AnnPragma srcLoc _             -> Just srcLoc
+
+
+emptySrcLoc :: HS.SrcLoc
+emptySrcLoc = HS.SrcLoc "" 0 0
