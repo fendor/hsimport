@@ -12,9 +12,12 @@ import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
 
-data ImportChange = ReplaceImport HS.ImportDecl
-                  | AddImport HS.ImportDecl
-                  | AddImportAtEnd HS.ImportDecl
+type SrcLine      = Int
+type ImportString = String
+
+data ImportChange = ReplaceImportAt SrcLine ImportString
+                  | AddImportAfter SrcLine ImportString
+                  | AddImportAtEnd ImportString
                   | NoImportChange
                   deriving (Show)
 
@@ -25,16 +28,20 @@ importChange moduleName (Just symbolName) module_
       if any entireModuleImported matching || any (symbolImported symbolName) matching
          then NoImportChange
          else case find hasImportedSymbols matching of
-                   Just impDecl -> ReplaceImport $ addSymbol impDecl symbolName
-                   Nothing      -> AddImport $ importDeclWithSymbol (HS.importLoc . last $ matching) moduleName symbolName
+                   Just impDecl ->
+                      ReplaceImportAt (srcLine impDecl) (HS.prettyPrint $ addSymbol impDecl symbolName)
+
+                   Nothing      ->
+                      AddImportAfter (srcLine . last $ matching)
+                                     (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImport $ importDeclWithSymbol (HS.importLoc bestMatch) moduleName symbolName
+      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
 
    | otherwise =
-      case srcLocForNewImport module_ of
-           Just srcLoc -> AddImport $ importDeclWithSymbol srcLoc moduleName symbolName
-           Nothing     -> AddImportAtEnd $ importDeclWithSymbol emptySrcLoc moduleName symbolName
+      case srcLineForNewImport module_ of
+           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
+           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
    where
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolName =
          id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ hsName symbolName])}
@@ -43,15 +50,15 @@ importChange moduleName Nothing module_
    | matching@(_:_) <- matchingImports moduleName module_ =
       if any entireModuleImported matching
          then NoImportChange
-         else AddImport $ importDecl (HS.importLoc . last $ matching) moduleName
+         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ importDecl moduleName)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImport $ importDecl (HS.importLoc bestMatch) moduleName
+      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDecl moduleName)
 
    | otherwise =
-      case srcLocForNewImport module_ of
-           Just srcLoc -> AddImport $ importDecl srcLoc moduleName
-           Nothing     -> AddImportAtEnd $ importDecl emptySrcLoc moduleName
+      case srcLineForNewImport module_ of
+           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDecl moduleName)
+           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDecl moduleName)
 
 
 matchingImports :: String -> HS.Module -> [HS.ImportDecl]
@@ -115,9 +122,9 @@ hasImportedSymbols import_
    | otherwise                                                         = False
 
 
-importDecl :: HS.SrcLoc -> String -> HS.ImportDecl
-importDecl srcLoc moduleName = HS.ImportDecl 
-   { HS.importLoc       = srcLoc
+importDecl :: String -> HS.ImportDecl
+importDecl moduleName = HS.ImportDecl
+   { HS.importLoc       = HS.SrcLoc "" 0 0
    , HS.importModule    = HS.ModuleName moduleName
    , HS.importQualified = False
    , HS.importSrc       = False
@@ -127,9 +134,9 @@ importDecl srcLoc moduleName = HS.ImportDecl
    }
 
 
-importDeclWithSymbol :: HS.SrcLoc -> String -> String -> HS.ImportDecl
-importDeclWithSymbol srcLoc moduleName symbolName = 
-   (importDecl srcLoc moduleName) { HS.importSpecs = Just (False, [HS.IVar $ hsName symbolName]) }
+importDeclWithSymbol :: String -> String -> HS.ImportDecl
+importDeclWithSymbol moduleName symbolName =
+   (importDecl moduleName) { HS.importSpecs = Just (False, [HS.IVar $ hsName symbolName]) }
 
 
 hsName :: String -> HS.Name
@@ -140,16 +147,20 @@ hsName symbolName
       isSymbol = any (A.notInClass "a-zA-Z0-9_") symbolName
 
 
-srcLocForNewImport :: HS.Module -> Maybe HS.SrcLoc
-srcLocForNewImport (HS.Module modSrcLoc _ _ _ _ imports decls)
-   | not $ null imports = Just (HS.importLoc $ last imports)
+srcLineForNewImport :: HS.Module -> Maybe SrcLine
+srcLineForNewImport (HS.Module modSrcLoc _ _ _ _ imports decls)
+   | not $ null imports = Just (srcLine $ last imports)
 
    | (decl:_)  <- decls
    , Just sLoc <- declSrcLoc decl
    , HS.srcLine sLoc >= HS.srcLine modSrcLoc
-   = Just sLoc {HS.srcLine = max 0 (HS.srcLine sLoc - 1)}
+   = Just $ max 0 (HS.srcLine sLoc - 1)
 
    | otherwise = Nothing
+
+
+srcLine :: HS.ImportDecl -> SrcLine
+srcLine = HS.srcLine . HS.importLoc
 
 
 declSrcLoc :: HS.Decl -> Maybe HS.SrcLoc
@@ -183,7 +194,3 @@ declSrcLoc decl =
         HS.SpecInlineSig srcLoc _ _ _ _   -> Just srcLoc
         HS.InstSig srcLoc _ _ _           -> Just srcLoc
         HS.AnnPragma srcLoc _             -> Just srcLoc
-
-
-emptySrcLoc :: HS.SrcLoc
-emptySrcLoc = HS.SrcLoc "" 0 0

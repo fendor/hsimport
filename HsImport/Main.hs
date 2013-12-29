@@ -8,7 +8,6 @@ import Control.Lens
 import System.Directory (copyFile)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Language.Haskell.Exts as HS
 import HsImport.ImportChange
 import HsImport.ImportSpec
 
@@ -16,24 +15,19 @@ import HsImport.ImportSpec
 hsImport :: ImportSpec -> IO ()
 hsImport spec =
    case importChange (spec ^. moduleToImport) (spec ^. symbolToImport) (spec ^. parsedSrcFile) of
-        ReplaceImport importDecl ->
+        ReplaceImportAt srcLine importStr ->
            modifyLines $ \lines_ ->
-              let importLine = HS.prettyPrint importDecl
-                  numDrops   = HS.srcLine . HS.importLoc $ importDecl
+              let numDrops   = srcLine
                   numTakes   = max 0 (numDrops - 1)
-                  in take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
+                  in take numTakes lines_ ++ [importStr] ++ drop numDrops lines_
 
-        AddImport importDecl ->
+        AddImportAfter srcLine importStr ->
            modifyLines $ \lines_ ->
-              let importLine = HS.prettyPrint importDecl
-                  numTakes   = HS.srcLine . HS.importLoc $ importDecl
+              let numTakes   = srcLine
                   numDrops   = numTakes
-                  in take numTakes lines_ ++ [importLine] ++ drop numDrops lines_
+                  in take numTakes lines_ ++ [importStr] ++ drop numDrops lines_
 
-        AddImportAtEnd importDecl ->
-           modifyLines $ \lines_ ->
-              let importLine = HS.prettyPrint importDecl
-                  in lines_ ++ [importLine]
+        AddImportAtEnd importStr -> modifyLines (++ [importStr])
 
         NoImportChange
            | Just saveTo <- spec ^. saveToFile -> copyFile (spec ^. sourceFile) saveTo
