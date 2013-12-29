@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, CPP #-}
 
 module HsImport.Args 
    ( HsImportArgs(..)
@@ -7,6 +7,10 @@ module HsImport.Args
 
 import System.Console.CmdArgs
 
+#ifdef CABAL
+import Data.Version (showVersion)
+import Paths_hsimport (version)
+#endif
 
 data HsImportArgs = HsImportArgs 
    { moduleName    :: String
@@ -29,5 +33,13 @@ hsImportArgs = cmdArgs $ HsImportArgs
    &= helpArg [explicit, name "help", name "h"]
    &= versionArg [explicit, name "version", name "v", summary versionInfo]
    where
-      versionInfo = "hsimport version 0.2"
       summaryInfo = ""
+
+
+versionInfo :: String
+versionInfo =
+#ifdef CABAL
+   "hsimport version " ++ showVersion version
+#else
+   "hsimport version unknown (not built with cabal)"
+#endif
