@@ -85,7 +85,7 @@ bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
                      Nothing | num' > 0  -> Just (idx, num')
                              | otherwise -> Nothing
          where
-            numMatches as bs = loop 0 as bs
+            numMatches = loop 0
                where
                   loop num (a:as) (b:bs)
                      | a == b    = loop (num + 1) as bs
@@ -102,11 +102,11 @@ bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
 
 entireModuleImported :: HS.ImportDecl -> Bool
 entireModuleImported import_ =
-   (not $ HS.importQualified import_) && (isNothing $ HS.importSpecs import_)
+   not (HS.importQualified import_) && isNothing (HS.importSpecs import_)
 
 
 symbolImported :: String -> HS.ImportDecl -> Bool
-symbolImported symbolName import_ = hasSymbol symbolName import_
+symbolImported = hasSymbol
    where
       hasSymbol sym (HS.ImportDecl {HS.importSpecs = Just (False, symbols)}) = any (hasIVar sym) symbols
       hasSymbol _   _                                                        = False
@@ -118,7 +118,7 @@ symbolImported symbolName import_ = hasSymbol symbolName import_
 
 hasImportedSymbols :: HS.ImportDecl -> Bool
 hasImportedSymbols import_
-   | (HS.ImportDecl {HS.importSpecs = Just (False, (_:_))}) <- import_ = True
+   | (HS.ImportDecl {HS.importSpecs = Just (False, _:_)}) <- import_ = True
    | otherwise                                                         = False
 
 
