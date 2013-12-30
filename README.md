@@ -14,6 +14,21 @@ Installation
 
     cabal install hsimport
 
+Examples
+--------
+
+`hsimport -m 'Control.Monad' SomeSource.hs`
+
+    import Control.Monad
+
+`hsimport -m 'Control.Monad' -s 'when' SomeSource.hs`
+
+    import Control.Monad (when)
+
+`hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs`
+
+    import qualified Control.Monad as CM
+
 Text Editor Integration
 -----------------------
 
@@ -31,6 +46,7 @@ Command Line Usage
       -m --modulename=ITEM     The module to import
       -s --symbolname=ITEM     The symbol to import, if empty, the entire module
                                is imported
+      -q --qualifiedname=ITEM  The name to use for a qualified module import
       -o --outputsrcfile=FILE  Save modified source file to file, if empty, the
                                source file is modified inplace
       -h --help                Display help message
