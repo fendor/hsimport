@@ -5,7 +5,10 @@ module HsImport.Main
    ) where
 
 import Control.Lens
-import System.Directory (copyFile)
+import Control.Applicative ((<$>))
+import Control.Monad (when)
+import Data.Maybe (isJust)
+import Data.List (foldl')
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import HsImport.ImportChange
@@ -13,35 +16,35 @@ import HsImport.ImportSpec
 
 
 hsImport :: ImportSpec -> IO ()
-hsImport spec =
-   case importChange (spec ^. moduleToImport) (spec ^. symbolToImport) (spec ^. parsedSrcFile) of
-        ReplaceImportAt srcLine importStr ->
-           modifyLines $ \lines_ ->
-              let numDrops   = srcLine
-                  numTakes   = max 0 (numDrops - 1)
-                  in take numTakes lines_ ++ [importStr] ++ drop numDrops lines_
+hsImport spec = do
+   let impChanges = importChanges (spec ^. moduleToImport)
+                                  (spec ^. symbolToImport)
+                                  (spec ^. qualifiedName)
+                                  (spec ^. parsedSrcFile)
 
-        AddImportAfter srcLine importStr ->
-           modifyLines $ \lines_ ->
-              let numTakes   = srcLine
-                  numDrops   = numTakes
-                  in take numTakes lines_ ++ [importStr] ++ drop numDrops lines_
+   srcLines <- lines . T.unpack <$> TIO.readFile (spec ^. sourceFile)
+   let srcLines' = applyChanges srcLines impChanges
+   when (srcLines' /= srcLines || isJust (spec ^. saveToFile)) $
+      TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
 
-        AddImportAtEnd importStr -> modifyLines (++ [importStr])
-
-        NoImportChange
-           | Just saveTo <- spec ^. saveToFile -> copyFile (spec ^. sourceFile) saveTo
-           | otherwise                         -> return ()
    where
-      modifyLines f = do
-         file <- TIO.readFile $ spec ^. sourceFile
-         let lines_  = lines . T.unpack $ file
-             lines_' = f lines_
-             file'   = T.pack . unlines $ lines_'
+      applyChanges = foldl' applyChange
 
-         TIO.writeFile (outputFile spec) file'
+      applyChange srcLines (ReplaceImportAt srcLine importStr) =
+         let numDrops   = srcLine
+             numTakes   = max 0 (numDrops - 1)
+             in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
 
-         where
-            outputFile spec
-               | Just file <- spec ^. saveToFile = file
-               | otherwise                       = spec ^. sourceFile
+      applyChange srcLines (AddImportAfter srcLine importStr) =
+         let numTakes   = srcLine
+             numDrops   = numTakes
+             in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
+
+      applyChange srcLines (AddImportAtEnd importStr) =
+         srcLines ++ [importStr]
+
+      applyChange srcLines NoImportChange = srcLines
+
+      outputFile spec
+         | Just file <- spec ^. saveToFile = file
+         | otherwise                       = spec ^. sourceFile

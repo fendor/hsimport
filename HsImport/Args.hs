@@ -15,6 +15,7 @@ import Paths_hsimport (version)
 data HsImportArgs = HsImportArgs 
    { moduleName    :: String
    , symbolName    :: String
+   , qualifiedName :: String
    , inputSrcFile  :: FilePath
    , outputSrcFile :: FilePath
    } deriving (Data, Typeable, Show, Eq)
@@ -24,6 +25,7 @@ hsImportArgs :: IO HsImportArgs
 hsImportArgs = cmdArgs $ HsImportArgs 
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
+   , qualifiedName = def &= help "The name to use for a qualified module import"
    , outputSrcFile = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile
    , inputSrcFile  = def &= args &= typ "SOURCEFILE"
    }

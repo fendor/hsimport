@@ -6,6 +6,7 @@ module HsImport.ImportSpec
    , parsedSrcFile
    , moduleToImport
    , symbolToImport
+   , qualifiedName
    , saveToFile
    , hsImportSpec
    ) where
@@ -21,6 +22,7 @@ data ImportSpec = ImportSpec
    , _parsedSrcFile  :: HS.Module
    , _moduleToImport :: String
    , _symbolToImport :: Maybe String
+   , _qualifiedName  :: Maybe String
    , _saveToFile     :: Maybe FilePath
    } deriving (Show)  
 
@@ -36,7 +38,8 @@ hsImportSpec args
       case result of
            HS.ParseOk modul -> return $ Right $
               ImportSpec (Args.inputSrcFile args) modul
-                         (Args.moduleName args) symbolName saveToFile
+                         (Args.moduleName args) symbolName
+                         qualifiedName saveToFile
 
            HS.ParseFailed srcLoc error -> return $ Left (show srcLoc ++ error)
 
@@ -45,6 +48,11 @@ hsImportSpec args
          case Args.symbolName args of
               ""  -> Nothing
               sym -> Just sym
+
+      qualifiedName =
+         case Args.qualifiedName args of
+              "" -> Nothing
+              qn -> Just qn
 
       saveToFile =
          case Args.outputSrcFile args of

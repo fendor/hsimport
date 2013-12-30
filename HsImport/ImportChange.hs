@@ -2,7 +2,7 @@
 
 module HsImport.ImportChange
    ( ImportChange(..)
-   , importChange
+   , importChanges
    ) where
 
 import Data.Maybe
@@ -22,8 +22,40 @@ data ImportChange = ReplaceImportAt SrcLine ImportString
                   deriving (Show)
 
 
-importChange :: String -> Maybe String -> HS.Module -> ImportChange
-importChange moduleName (Just symbolName) module_
+importChanges :: String -> Maybe String -> Maybe String -> HS.Module -> [ImportChange]
+importChanges moduleName (Just symbolName) (Just qualifiedName) module_ =
+   [ importModuleWithSymbol moduleName symbolName module_
+   , importQualifiedModule moduleName qualifiedName module_
+   ]
+
+importChanges moduleName (Just symbolName) Nothing module_ =
+   [ importModuleWithSymbol moduleName symbolName module_ ]
+
+importChanges moduleName Nothing (Just qualifiedName) module_ =
+   [ importQualifiedModule moduleName qualifiedName module_ ]
+
+importChanges moduleName Nothing Nothing module_ =
+   [ importModule moduleName module_ ]
+
+
+importModule :: String -> HS.Module -> ImportChange
+importModule moduleName module_
+   | matching@(_:_) <- matchingImports moduleName module_ =
+      if any entireModuleImported matching
+         then NoImportChange
+         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ importDecl moduleName)
+
+   | Just bestMatch <- bestMatchingImport moduleName module_ =
+      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDecl moduleName)
+
+   | otherwise =
+      case srcLineForNewImport module_ of
+           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDecl moduleName)
+           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDecl moduleName)
+
+
+importModuleWithSymbol :: String -> String -> HS.Module -> ImportChange
+importModuleWithSymbol moduleName symbolName module_
    | matching@(_:_) <- matchingImports moduleName module_ =
       if any entireModuleImported matching || any (symbolImported symbolName) matching
          then NoImportChange
@@ -46,19 +78,21 @@ importChange moduleName (Just symbolName) module_
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolName =
          id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ hsName symbolName])}
 
-importChange moduleName Nothing module_
+
+importQualifiedModule :: String -> String -> HS.Module -> ImportChange
+importQualifiedModule moduleName qualifiedName module_
    | matching@(_:_) <- matchingImports moduleName module_ =
-      if any entireModuleImported matching
+      if any (hasQualifiedImport qualifiedName) matching
          then NoImportChange
-         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ importDecl moduleName)
+         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDecl moduleName)
+      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDecl moduleName)
-           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDecl moduleName)
+           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
+           Nothing      -> AddImportAtEnd (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
 
 
 matchingImports :: String -> HS.Module -> [HS.ImportDecl]
@@ -105,6 +139,16 @@ entireModuleImported import_ =
    not (HS.importQualified import_) && isNothing (HS.importSpecs import_)
 
 
+hasQualifiedImport :: String -> HS.ImportDecl -> Bool
+hasQualifiedImport qualifiedName import_
+   | HS.importQualified import_
+   , Just (HS.ModuleName importAs) <- HS.importAs import_
+   , importAs == qualifiedName
+   = True
+
+   | otherwise = False
+
+
 symbolImported :: String -> HS.ImportDecl -> Bool
 symbolImported = hasSymbol
    where
@@ -137,6 +181,13 @@ importDecl moduleName = HS.ImportDecl
 importDeclWithSymbol :: String -> String -> HS.ImportDecl
 importDeclWithSymbol moduleName symbolName =
    (importDecl moduleName) { HS.importSpecs = Just (False, [HS.IVar $ hsName symbolName]) }
+
+
+qualifiedImportDecl :: String -> String -> HS.ImportDecl
+qualifiedImportDecl moduleName qualifiedName =
+   (importDecl moduleName) { HS.importQualified = True
+                           , HS.importAs        = Just $ HS.ModuleName qualifiedName
+                           }
 
 
 hsName :: String -> HS.Name
