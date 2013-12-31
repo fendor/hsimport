@@ -186,7 +186,9 @@ importDeclWithSymbol moduleName symbolName =
 qualifiedImportDecl :: String -> String -> HS.ImportDecl
 qualifiedImportDecl moduleName qualifiedName =
    (importDecl moduleName) { HS.importQualified = True
-                           , HS.importAs        = Just $ HS.ModuleName qualifiedName
+                           , HS.importAs        = if moduleName /= qualifiedName
+                                                     then Just $ HS.ModuleName qualifiedName
+                                                     else Nothing
                            }
 
 
