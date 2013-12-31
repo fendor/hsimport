@@ -39,6 +39,7 @@ moduleTests = testGroup "Module Tests"
    , hsImportTest "ModuleTest22" "Control.Monad" "" ""
    , hsImportTest "ModuleTest23" "Control.Monad" "" "CM"
    , hsImportTest "ModuleTest24" "Control.Monad" "" "CM"
+   , hsImportTest "ModuleTest25" "Control.Monad" "" "Control.Monad"
    ]
 
 
@@ -61,6 +62,7 @@ symbolTests = testGroup "Symbol Tests"
    , hsImportTest "SymbolTest14" "Control.Applicative" "<*" ""
    , hsImportTest "SymbolTest15" "Control.Applicative" "*>" ""
    , hsImportTest "SymbolTest16" "Control.Monad" "when" "CM"
+   , hsImportTest "SymbolTest17" "Control.Monad" "when" "CM"
    ]
 
 
