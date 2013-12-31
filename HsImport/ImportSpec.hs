@@ -36,12 +36,14 @@ hsImportSpec args
    | otherwise = do
       result <- parseFile $ Args.inputSrcFile args
       case result of
-           HS.ParseOk modul -> return $ Right $
+           Right (HS.ParseOk modul) -> return $ Right $
               ImportSpec (Args.inputSrcFile args) modul
                          (Args.moduleName args) symbolName
                          qualifiedName saveToFile
 
-           HS.ParseFailed srcLoc error -> return $ Left (show srcLoc ++ error)
+           Right (HS.ParseFailed srcLoc error) -> return $ Left (show srcLoc ++ error)
+
+           Left error -> return $ Left error
 
    where
       symbolName =
