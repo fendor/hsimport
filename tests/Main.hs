@@ -40,6 +40,7 @@ moduleTests = testGroup "Module Tests"
    , hsImportTest "ModuleTest23" "Control.Monad" "" "CM"
    , hsImportTest "ModuleTest24" "Control.Monad" "" "CM"
    , hsImportTest "ModuleTest25" "Control.Monad" "" "Control.Monad"
+   , hsImportTest "ModuleTest26" "Control.Monad" "" ""
    ]
 
 

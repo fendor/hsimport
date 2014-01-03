@@ -16,7 +16,7 @@ type Error = String
 
 parseFile :: FilePath -> IO (Either Error (HS.ParseResult HS.Module))
 parseFile file = do
-   srcFile <- unlines. filterCPP . lines . T.unpack <$> TIO.readFile file
+   srcFile <- unlines. replaceCPPByComment . lines . T.unpack <$> TIO.readFile file
    catch (do let result = HS.parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
@@ -30,8 +30,11 @@ parseFile file = do
             srcResult <- parseInvalidSource srcLines 0 (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
    where
-      -- | filter out CPP directives
-      filterCPP = filter (not . ("#" `isPrefixOf`))
+      -- | replace CPP directives by a fake comment
+      replaceCPPByComment = map $ \line ->
+         if "#" `isPrefixOf` line
+            then "-- fake hsimport comment"
+            else line
 
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
