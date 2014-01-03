@@ -51,3 +51,10 @@ Command Line Usage
                                source file is modified inplace
       -h --help                Display help message
       -v --version             Print version information
+
+Issues
+------
+
+There is some rudimentarily handling for code using CPP, but the import statements
+might be added at the wrong place, because the lines containing CPP directives
+are ignored and therefore they aren't considered in the source line count.

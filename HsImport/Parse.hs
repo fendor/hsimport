@@ -7,6 +7,7 @@ module HsImport.Parse
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
+import Data.List (isPrefixOf)
 import qualified Language.Haskell.Exts as HS
 import Control.Applicative ((<$>))
 import Control.Exception (catch, SomeException)
@@ -15,7 +16,7 @@ type Error = String
 
 parseFile :: FilePath -> IO (Either Error (HS.ParseResult HS.Module))
 parseFile file = do
-   srcFile <- T.unpack <$> TIO.readFile file
+   srcFile <- unlines. filterCPP . lines . T.unpack <$> TIO.readFile file
    catch (do let result = HS.parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
@@ -28,6 +29,10 @@ parseFile file = do
             let srcLines = lines srcFile
             srcResult <- parseInvalidSource srcLines 0 (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
+   where
+      -- | filter out CPP directives
+      filterCPP = filter (not . ("#" `isPrefixOf`))
+
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
