@@ -15,17 +15,17 @@ type Error = String
 
 parseFile :: FilePath -> IO (Either Error (HS.ParseResult HS.Module))
 parseFile file = do
-   catch (do result <- HS.parseFile file
+   srcFile <- T.unpack <$> TIO.readFile file
+   catch (do let result = HS.parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
 
                   HS.ParseFailed srcLoc _ -> do
-                     srcLines  <- lines . T.unpack <$> TIO.readFile file
-                     srcResult <- parseInvalidSource srcLines 0 (HS.srcLine srcLoc)
+                     srcResult <- parseInvalidSource (lines srcFile) 0 (HS.srcLine srcLoc)
                      return $ Right $ fromMaybe result srcResult)
 
          (\(e :: SomeException) -> do
-            srcLines  <- lines . T.unpack <$> TIO.readFile file
+            let srcLines = lines srcFile
             srcResult <- parseInvalidSource srcLines 0 (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
 
