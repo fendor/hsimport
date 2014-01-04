@@ -150,8 +150,8 @@ hasQualifiedImport qualifiedName import_
 
 
 symbolImported :: String -> HS.ImportDecl -> Bool
-symbolImported symbol importDecl
-   | Just (False, symbols) <- HS.importSpecs importDecl
+symbolImported symbol import_
+   | Just (False, symbols) <- HS.importSpecs import_
    , any (== symbol) (symbolStrings symbols)
    = True
 
@@ -170,8 +170,8 @@ symbolImported symbol importDecl
 
 hasImportedSymbols :: HS.ImportDecl -> Bool
 hasImportedSymbols import_
-   | (HS.ImportDecl {HS.importSpecs = Just (False, _:_)}) <- import_ = True
-   | otherwise                                                         = False
+   | Just (False, _:_) <- HS.importSpecs import_ = True
+   | otherwise                                   = False
 
 
 importDecl :: String -> HS.ImportDecl
