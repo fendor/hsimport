@@ -64,6 +64,7 @@ symbolTests = testGroup "Symbol Tests"
    , hsImportTest "SymbolTest15" "Control.Applicative" "*>" ""
    , hsImportTest "SymbolTest16" "Control.Monad" "when" "CM"
    , hsImportTest "SymbolTest17" "Control.Monad" "when" "CM"
+   , hsImportTest "SymbolTest18" "Data.Text" "Text" ""
    ]
 
 

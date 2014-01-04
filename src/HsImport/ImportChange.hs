@@ -150,14 +150,22 @@ hasQualifiedImport qualifiedName import_
 
 
 symbolImported :: String -> HS.ImportDecl -> Bool
-symbolImported = hasSymbol
-   where
-      hasSymbol sym (HS.ImportDecl {HS.importSpecs = Just (False, symbols)}) = any (hasIVar sym) symbols
-      hasSymbol _   _                                                        = False
+symbolImported symbol importDecl
+   | Just (False, symbols) <- HS.importSpecs importDecl
+   , any (== symbol) (symbolStrings symbols)
+   = True
 
-      hasIVar sym (HS.IVar (HS.Ident  id)) = sym == id
-      hasIVar sym (HS.IVar (HS.Symbol  s)) = sym == s
-      hasIVar _   _                        = False
+   | otherwise = False
+   where
+      symbolStrings = map symbolString
+
+      symbolString (HS.IVar name)         = nameString name
+      symbolString (HS.IAbs name)         = nameString name
+      symbolString (HS.IThingAll name)    = nameString name
+      symbolString (HS.IThingWith name _) = nameString name
+
+      nameString (HS.Ident  id)  = id
+      nameString (HS.Symbol sym) = sym
 
 
 hasImportedSymbols :: HS.ImportDecl -> Bool
