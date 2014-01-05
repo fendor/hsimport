@@ -17,17 +17,14 @@ Installation
 Examples
 --------
 
-`hsimport -m 'Control.Monad' SomeSource.hs`
+    $ hsimport -m 'Control.Monad' SomeSource.hs`
+    => import Control.Monad
 
-    import Control.Monad
+    $ hsimport -m 'Control.Monad' -s 'when' SomeSource.hs
+    => import Control.Monad (when)
 
-`hsimport -m 'Control.Monad' -s 'when' SomeSource.hs`
-
-    import Control.Monad (when)
-
-`hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs`
-
-    import qualified Control.Monad as CM
+    $ hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs
+    => import qualified Control.Monad as CM
 
 Text Editor Integration
 -----------------------
