@@ -1,5 +1,5 @@
 Name:          hsimport
-Version:       0.2.6.3
+Version:       0.2.6.4
 License:       BSD3
 License-file:  LICENSE
 Author:        Daniel Trstenjak
@@ -23,6 +23,7 @@ Executable hsimport
                  HsImport.ImportChange
                  HsImport.Parse
                  HsImport.Main
+                 Paths_hsimport
   ghc-options:   -W
   cpp-options:   -DCABAL
   Build-Depends: base >= 3 && < 5,
