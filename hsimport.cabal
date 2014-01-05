@@ -1,5 +1,5 @@
 Name:          hsimport
-Version:       0.2.6.2
+Version:       0.2.6.3
 License:       BSD3
 License-file:  LICENSE
 Author:        Daniel Trstenjak
@@ -20,6 +20,8 @@ Executable hsimport
   other-modules: HsImport
                  HsImport.Args
                  HsImport.ImportSpec
+                 HsImport.ImportChange
+                 HsImport.Parse
                  HsImport.Main
   ghc-options:   -W
   cpp-options:   -DCABAL
