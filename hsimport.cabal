@@ -1,5 +1,5 @@
 Name:          hsimport
-Version:       0.2.6.4
+Version:       0.2.6.5
 License:       BSD3
 License-file:  LICENSE
 Author:        Daniel Trstenjak
@@ -44,6 +44,9 @@ library
                    HsImport.Args
                    HsImport.ImportSpec
                    HsImport.Main
+  other-modules:   HsImport.ImportChange
+                   HsImport.Parse
+                   Paths_hsimport
   Build-Depends: base >= 3 && < 5,
                  cmdargs >= 0.10.5 && < 0.11,
                  haskell-src-exts >= 1.14.0 && < 1.15,
