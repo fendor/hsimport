@@ -1,11 +1,14 @@
 
 module Main where
 
+import Control.Monad (guard)
+import System.Console.CmdArgs (cmdArgsApply, cmdArgsMode)
+import System.Console.CmdArgs.Explicit (processValue)
+import HsImport (hsImport, hsImportSpec)
+import HsImport.Args (hsImportArgsOptions)
 import Test.Tasty
 import Test.Tasty.Golden
-import System.Process
 import System.FilePath
-import Data.List (intercalate)
 
 main = defaultMain tests
 
@@ -73,17 +76,17 @@ hsImportTest testName moduleName symbolName qualifiedName =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
-        handle <- runCommand $ "hsimport " ++ params
-        waitForProcess handle
-        return ()
+        args <- cmdArgsApply (processValue (cmdArgsMode hsImportArgsOptions) params)
+        Right hsImportSpec <- hsImportSpec args
+        hsImport hsImportSpec
 
       diff ref new = ["diff", "-u", ref, new]
 
-      params      = intercalate " " [moduleParam, symbolParam, qualParam, outputParam, inputFile]
-      moduleParam = "-m '" ++ moduleName ++ "'"
-      symbolParam = if null symbolName then "" else "-s '" ++ symbolName ++ "'"
-      qualParam   = if null qualifiedName then "" else "-q '" ++ qualifiedName ++ "'"
-      outputParam = "-o '" ++ outputFile ++ "'"
+      params      = concat [moduleParam, symbolParam, qualParam, outputParam, return inputFile]
+      moduleParam = [ "-m",  moduleName ]
+      symbolParam = guard (not $ null symbolName) >> [ "-s", symbolName ]
+      qualParam   = guard (not $ null qualifiedName) >> [ "-q", qualifiedName ]
+      outputParam = [ "-o", outputFile ]
 
       goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
       outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
