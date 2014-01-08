@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, CPP #-}
 
-module HsImport.Args 
+module HsImport.Args
    ( HsImportArgs(..)
    , hsImportArgs
    ) where
@@ -12,7 +12,7 @@ import Data.Version (showVersion)
 import Paths_hsimport (version)
 #endif
 
-data HsImportArgs = HsImportArgs 
+data HsImportArgs = HsImportArgs
    { moduleName    :: String
    , symbolName    :: String
    , qualifiedName :: String

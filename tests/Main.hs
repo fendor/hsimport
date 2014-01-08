@@ -3,9 +3,10 @@ module Main where
 
 import Test.Tasty
 import Test.Tasty.Golden
-import System.Process
 import System.FilePath
-import Data.List (intercalate)
+import System.IO (hPutStrLn, stderr)
+import HsImport (hsImport, hsImportSpec)
+import qualified HsImport.Args as Args
 
 main = defaultMain tests
 
@@ -73,17 +74,13 @@ hsImportTest testName moduleName symbolName qualifiedName =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
-        handle <- runCommand $ "hsimport " ++ params
-        waitForProcess handle
-        return ()
+         let args = Args.HsImportArgs moduleName symbolName qualifiedName inputFile outputFile
+         spec <- hsImportSpec args
+         case spec of
+              Left error  -> hPutStrLn stderr ("hsimport: " ++ error)
+              Right spec_ -> hsImport spec_
 
       diff ref new = ["diff", "-u", ref, new]
-
-      params      = intercalate " " [moduleParam, symbolParam, qualParam, outputParam, inputFile]
-      moduleParam = "-m '" ++ moduleName ++ "'"
-      symbolParam = if null symbolName then "" else "-s '" ++ symbolName ++ "'"
-      qualParam   = if null qualifiedName then "" else "-q '" ++ qualifiedName ++ "'"
-      outputParam = "-o '" ++ outputFile ++ "'"
 
       goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
       outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
