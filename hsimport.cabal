@@ -10,6 +10,13 @@ Cabal-Version: >=1.8
 Synopsis:      A command line program for extending the import list of a Haskell source file.
 Description:   A command line program for extending the import list of a Haskell source file.
 
+-- test samples
+extra-source-files:
+    tests/inputFiles/*.hs
+    tests/goldenFiles/*.hs
+    -- to leave directory in tarball
+    tests/outputFiles/.gitignore
+
 source-repository head
   type:     git
   location: https://github.com/dan-t/hsimport
