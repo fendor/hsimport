@@ -1,12 +1,12 @@
 Name:          hsimport
-Version:       0.2.6.6
+Version:       0.2.6.7
 License:       BSD3
 License-file:  LICENSE
 Author:        Daniel Trstenjak
 Maintainer:    daniel.trstenjak@gmail.com
 Build-Type:    Simple
 Category:      Utils
-Cabal-Version: >=1.8
+Cabal-Version: >=1.9.2
 Synopsis:      A command line program for extending the import list of a Haskell source file.
 Description:   A command line program for extending the import list of a Haskell source file.
 
