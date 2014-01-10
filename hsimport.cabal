@@ -1,5 +1,5 @@
 Name:          hsimport
-Version:       0.2.6.7
+Version:       0.2.6.8
 License:       BSD3
 License-file:  LICENSE
 Author:        Daniel Trstenjak
@@ -10,12 +10,12 @@ Cabal-Version: >=1.9.2
 Synopsis:      A command line program for extending the import list of a Haskell source file.
 Description:   A command line program for extending the import list of a Haskell source file.
 
--- test samples
 extra-source-files:
-    tests/inputFiles/*.hs
-    tests/goldenFiles/*.hs
-    -- to leave directory in tarball
-    tests/outputFiles/.gitignore
+  README.md
+  tests/inputFiles/*.hs
+  tests/goldenFiles/*.hs
+  -- to leave directory in tarball
+  tests/outputFiles/.gitignore
 
 source-repository head
   type:     git
