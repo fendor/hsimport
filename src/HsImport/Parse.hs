@@ -17,7 +17,7 @@ type Error = String
 parseFile :: FilePath -> IO (Either Error (HS.ParseResult HS.Module))
 parseFile file = do
    srcFile <- unlines. replaceCPPByComment . lines . T.unpack <$> TIO.readFile file
-   catch (do let result = HS.parseFileContents srcFile
+   catch (do let result = parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
 
@@ -43,7 +43,7 @@ parseInvalidSource :: [String] -> Int -> Int -> IO (Maybe (HS.ParseResult HS.Mod
 parseInvalidSource srcLines lastValidLine firstInvalidLine
    | null srcLines || lastValidLine >= firstInvalidLine = return Nothing
    | otherwise =
-      catch (case HS.parseFileContents source of
+      catch (case parseFileContents source of
                   result@(HS.ParseOk _)
                      | (nextLine + 1) == firstInvalidLine ->
                         return $ Just result
@@ -56,3 +56,9 @@ parseInvalidSource srcLines lastValidLine firstInvalidLine
    where
       source   = unlines $ take (nextLine + 1) srcLines
       nextLine = lastValidLine + (floor ((realToFrac (firstInvalidLine - lastValidLine) / 2) :: Double) :: Int)
+
+
+parseFileContents :: String -> HS.ParseResult HS.Module
+parseFileContents = HS.parseFileContentsWithMode parseMode
+   where
+      parseMode = HS.defaultParseMode { HS.fixities = Just [] }
