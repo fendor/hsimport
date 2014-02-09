@@ -205,7 +205,7 @@ hsName symbolName
    | isSymbol  = HS.Symbol symbolName
    | otherwise = HS.Ident symbolName
    where
-      isSymbol = any (A.notInClass "a-zA-Z0-9_") symbolName
+      isSymbol = any (A.notInClass "a-zA-Z0-9_'") symbolName
 
 
 srcLineForNewImport :: HS.Module -> Maybe SrcLine
