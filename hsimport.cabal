@@ -1,75 +1,57 @@
-Name:          hsimport
-Version:       0.2.9
-License:       BSD3
-License-file:  LICENSE
-Author:        Daniel Trstenjak
-Maintainer:    daniel.trstenjak@gmail.com
-Build-Type:    Simple
-Category:      Utils
-Cabal-Version: >=1.9.2
-Synopsis:      A command line program for extending the import list of a Haskell source file.
-Description:   A command line program for extending the import list of a Haskell source file.
-
-extra-source-files:
-  README.md
-  tests/inputFiles/*.hs
-  tests/goldenFiles/*.hs
-  -- to leave directory in tarball
-  tests/outputFiles/.gitignore
-
+name: hsimport
+version: 0.2.9
+cabal-version: >=1.9.2
+build-type: Simple
+license: BSD3
+license-file: LICENSE
+maintainer: daniel.trstenjak@gmail.com
+synopsis: A command line program for extending the import list of a Haskell source file.
+description: A command line program for extending the import list of a Haskell source file.
+category: Utils
+author: Daniel Trstenjak
+data-dir: ""
+extra-source-files: README.md tests/inputFiles/*.hs
+                    tests/goldenFiles/*.hs tests/outputFiles/.gitignore
+ 
 source-repository head
-  type:     git
-  location: https://github.com/dan-t/hsimport
-
-Executable hsimport
-  hs-source-dirs: src
-  Main-is:       Main.hs
-  other-modules: HsImport
-                 HsImport.Args
-                 HsImport.ImportSpec
-                 HsImport.ImportChange
-                 HsImport.Parse
-                 HsImport.Main
-                 Paths_hsimport
-  ghc-options:   -W
-  cpp-options:   -DCABAL
-  Build-Depends: base >= 3 && < 5,
-                 cmdargs >= 0.10.5 && < 0.11,
-                 haskell-src-exts >= 1.14.0 && < 1.15,
-                 lens >= 3.9.2 && < 4.1,
-                 mtl >= 2.1.2 && < 2.2,
-                 text >= 0.11.3.1 && < 1.2,
-                 split >= 0.2.2 && < 0.3,
-                 attoparsec >= 0.10.4.0 && < 0.12,
-                 directory >= 1.2.0.1 && < 1.3
-
+    type: git
+    location: https://github.com/dan-t/hsimport
+ 
 library
-  hs-source-dirs: src
-  ghc-options:   -W
-  cpp-options:   -DCABAL
-  exposed-modules: HsImport
-                   HsImport.Args
-                   HsImport.ImportSpec
-                   HsImport.Main
-  other-modules:   HsImport.ImportChange
-                   HsImport.Parse
-                   Paths_hsimport
-  Build-Depends: base >= 3 && < 5,
-                 cmdargs >= 0.10.5 && < 0.11,
-                 haskell-src-exts >= 1.14.0 && < 1.15,
-                 lens >= 3.9.2 && < 4.1,
-                 mtl >= 2.1.2 && < 2.2,
-                 text >= 0.11.3.1 && < 1.2,
-                 split >= 0.2.2 && < 0.3,
-                 attoparsec >= 0.10.4.0 && < 0.12,
-                 directory >= 1.2.0.1 && < 1.3
-
+    build-depends: base >=3 && <5, cmdargs >=0.10.5 && <0.11,
+                   haskell-src-exts >=1.14.0 && <1.15, lens >=3.9.2 && <4.1,
+                   mtl >=2.1.2 && <2.2, text >=0.11.3.1 && <1.2,
+                   split >=0.2.2 && <0.3, attoparsec >=0.10.4.0 && <0.12,
+                   directory >=1.2.0.1 && <1.3
+    exposed-modules: HsImport HsImport.Args HsImport.ImportSpec
+                     HsImport.Main
+    exposed: True
+    buildable: True
+    cpp-options: -DCABAL
+    hs-source-dirs: src
+    other-modules: HsImport.ImportChange HsImport.Parse Paths_hsimport
+    ghc-options: -W
+ 
+executable hsimport
+    build-depends: base >=3 && <5, cmdargs >=0.10.5 && <0.11,
+                   haskell-src-exts >=1.14.0 && <1.15, lens >=3.9.2 && <4.1,
+                   mtl >=2.1.2 && <2.2, text >=0.11.3.1 && <1.2,
+                   split >=0.2.2 && <0.3, attoparsec >=0.10.4.0 && <0.12,
+                   directory >=1.2.0.1 && <1.3
+    main-is: Main.hs
+    buildable: True
+    cpp-options: -DCABAL
+    hs-source-dirs: src
+    other-modules: HsImport HsImport.Args HsImport.ImportSpec
+                   HsImport.ImportChange HsImport.Parse HsImport.Main Paths_hsimport
+    ghc-options: -W
+ 
 test-suite hsimport-tests
-  Main-is:       tests/Main.hs
-  ghc-options:   -W
-  type:          exitcode-stdio-1.0
-  Build-Depends: base >= 3 && < 5,
-                 tasty >= 0.6 && < 0.8,
-                 tasty-golden >= 2.2.0.1 && < 2.3,
-                 filepath >= 1.3.0.1 && < 1.4,
-                 hsimport
+    build-depends: base >=3 && <5, tasty >=0.6 && <0.8,
+                   tasty-golden >=2.2.0.1 && <2.3, filepath >=1.3.0.1 && <1.4,
+                   hsimport -any
+    type: exitcode-stdio-1.0
+    main-is: tests/Main.hs
+    buildable: True
+    ghc-options: -W
+ 
