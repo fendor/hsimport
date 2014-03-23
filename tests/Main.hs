@@ -6,7 +6,7 @@ import Test.Tasty.Golden
 import System.FilePath
 import System.IO (hPutStrLn, stderr)
 import HsImport (hsImport, hsImportSpec)
-import qualified HsImport.Args as Args
+import qualified HsImport.Args as A
 
 main = defaultMain tests
 
@@ -15,68 +15,73 @@ tests = testGroup "Tests" [moduleTests, symbolTests]
 
 moduleTests :: TestTree
 moduleTests = testGroup "Module Tests"
-   [ hsImportTest "ModuleTest0" "Foo.Bar" "" ""
-   , hsImportTest "ModuleTest1" "Foo.Bar" "" ""
-   , hsImportTest "ModuleTest2" "Foo.Bar.Blub" "" ""
-   , hsImportTest "ModuleTest3" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest4" "Ugah.Argh2" "" ""
-   , hsImportTest "ModuleTest5" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest6" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest7" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest8" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest9" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest10" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest11" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest12" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest13" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest14" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest15" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest16" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest17" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest18" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest19" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest20" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest21" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest22" "Control.Monad" "" ""
-   , hsImportTest "ModuleTest23" "Control.Monad" "" "CM"
-   , hsImportTest "ModuleTest24" "Control.Monad" "" "CM"
-   , hsImportTest "ModuleTest25" "Control.Monad" "" "Control.Monad"
-   , hsImportTest "ModuleTest26" "Control.Monad" "" ""
+   [ test "ModuleTest0" $ A.defaultArgs { A.moduleName = "Foo.Bar" }
+   , test "ModuleTest1" $ A.defaultArgs { A.moduleName = "Foo.Bar" }
+   , test "ModuleTest2" $ A.defaultArgs { A.moduleName = "Foo.Bar.Blub" }
+   , test "ModuleTest3" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest4" $ A.defaultArgs { A.moduleName = "Ugah.Argh2" }
+   , test "ModuleTest5" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest6" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest7" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest8" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest9" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest10" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest11" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest12" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest13" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest14" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest15" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest16" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest17" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest18" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest19" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest20" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest21" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest22" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test "ModuleTest23" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "CM" }
+   , test "ModuleTest24" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "CM" }
+   , test "ModuleTest25" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "Control.Monad" }
+   , test "ModuleTest26" $ A.defaultArgs { A.moduleName = "Control.Monad" }
    ]
 
 
 symbolTests :: TestTree
 symbolTests = testGroup "Symbol Tests"
-   [ hsImportTest "SymbolTest0" "Foo.Bar" "foo" ""
-   , hsImportTest "SymbolTest1" "Foo.Bar" "foo" ""
-   , hsImportTest "SymbolTest2" "Foo.Bar.Blub" "foo" ""
-   , hsImportTest "SymbolTest3" "Control.Monad" "when" ""
-   , hsImportTest "SymbolTest4" "Ugah.Argh2" "argh" ""
-   , hsImportTest "SymbolTest5" "Control.Monad" "when" ""
-   , hsImportTest "SymbolTest6" "Control.Monad" "unless" ""
-   , hsImportTest "SymbolTest7" "Control.Monad" "unless" ""
-   , hsImportTest "SymbolTest8" "Control.Monad" "unless" ""
-   , hsImportTest "SymbolTest9" "Control.Monad" "unless" ""
-   , hsImportTest "SymbolTest10" "Control.Applicative" "<$>" ""
-   , hsImportTest "SymbolTest11" "Control.Applicative" "<$>" ""
-   , hsImportTest "SymbolTest12" "Control.Applicative" "<$>" ""
-   , hsImportTest "SymbolTest13" "Control.Applicative" "<*" ""
-   , hsImportTest "SymbolTest14" "Control.Applicative" "<*" ""
-   , hsImportTest "SymbolTest15" "Control.Applicative" "*>" ""
-   , hsImportTest "SymbolTest16" "Control.Monad" "when" "CM"
-   , hsImportTest "SymbolTest17" "Control.Monad" "when" "CM"
-   , hsImportTest "SymbolTest18" "Data.Text" "Text" ""
-   , hsImportTest "SymbolTest19" "Data.List" "foldl'" ""
+   [ test "SymbolTest0" $ A.defaultArgs { A.moduleName = "Foo.Bar", A.symbolName = "foo" }
+   , test "SymbolTest1" $ A.defaultArgs { A.moduleName = "Foo.Bar", A.symbolName = "foo" }
+   , test "SymbolTest2" $ A.defaultArgs { A.moduleName = "Foo.Bar.Blub", A.symbolName = "foo" }
+   , test "SymbolTest3" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when" }
+   , test "SymbolTest4" $ A.defaultArgs { A.moduleName = "Ugah.Argh2", A.symbolName = "argh" }
+   , test "SymbolTest5" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when" }
+   , test "SymbolTest6" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
+   , test "SymbolTest7" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
+   , test "SymbolTest8" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
+   , test "SymbolTest9" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
+   , test "SymbolTest10" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
+   , test "SymbolTest11" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
+   , test "SymbolTest12" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
+   , test "SymbolTest13" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<*" }
+   , test "SymbolTest14" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<*" }
+   , test "SymbolTest15" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "*>" }
+   , test "SymbolTest16" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when", A.qualifiedName = "CM" }
+   , test "SymbolTest17" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when", A.qualifiedName = "CM" }
+   , test "SymbolTest18" $ A.defaultArgs { A.moduleName = "Data.Text", A.symbolName = "Text" }
+   , test "SymbolTest19" $ A.defaultArgs { A.moduleName = "Data.List", A.symbolName = "foldl'" }
+   , test "SymbolTest20" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True }
+   , test "SymbolTest21" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True }
+   , test "SymbolTest22" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Just"] }
+   , test "SymbolTest23" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True, A.with = ["Just"] }
+   , test "SymbolTest24" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Just"] }
+   , test "SymbolTest25" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Nothing", "Just"] }
    ]
 
 
-hsImportTest :: String -> String -> String -> String -> TestTree
-hsImportTest testName moduleName symbolName qualifiedName =
+test :: String -> A.HsImportArgs -> TestTree
+test testName args =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
-         let args = Args.HsImportArgs moduleName symbolName qualifiedName inputFile outputFile
-         spec <- hsImportSpec args
+         spec <- hsImportSpec (args { A.inputSrcFile = inputFile, A.outputSrcFile = outputFile })
          case spec of
               Left error  -> hPutStrLn stderr ("hsimport: " ++ error)
               Right spec_ -> hsImport spec_
