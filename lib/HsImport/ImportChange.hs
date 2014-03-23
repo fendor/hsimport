@@ -6,11 +6,12 @@ module HsImport.ImportChange
    ) where
 
 import Data.Maybe
-import Data.List (find)
+import Data.List (find, (\\))
 import Data.List.Split (splitOn)
 import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
+import HsImport.Symbol (Symbol(..))
 
 type SrcLine      = Int
 type ImportString = String
@@ -22,14 +23,14 @@ data ImportChange = ReplaceImportAt SrcLine ImportString
                   deriving (Show)
 
 
-importChanges :: String -> Maybe String -> Maybe String -> HS.Module -> [ImportChange]
-importChanges moduleName (Just symbolName) (Just qualifiedName) module_ =
-   [ importModuleWithSymbol moduleName symbolName module_
+importChanges :: String -> Maybe Symbol -> Maybe String -> HS.Module -> [ImportChange]
+importChanges moduleName (Just symbol) (Just qualifiedName) module_ =
+   [ importModuleWithSymbol moduleName symbol module_
    , importQualifiedModule moduleName qualifiedName module_
    ]
 
-importChanges moduleName (Just symbolName) Nothing module_ =
-   [ importModuleWithSymbol moduleName symbolName module_ ]
+importChanges moduleName (Just symbol) Nothing module_ =
+   [ importModuleWithSymbol moduleName symbol module_ ]
 
 importChanges moduleName Nothing (Just qualifiedName) module_ =
    [ importQualifiedModule moduleName qualifiedName module_ ]
@@ -54,29 +55,29 @@ importModule moduleName module_
            Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDecl moduleName)
 
 
-importModuleWithSymbol :: String -> String -> HS.Module -> ImportChange
-importModuleWithSymbol moduleName symbolName module_
+importModuleWithSymbol :: String -> Symbol -> HS.Module -> ImportChange
+importModuleWithSymbol moduleName symbol module_
    | matching@(_:_) <- matchingImports moduleName module_ =
-      if any entireModuleImported matching || any (symbolImported symbolName) matching
+      if any entireModuleImported matching || any (symbolImported symbol) matching
          then NoImportChange
          else case find hasImportedSymbols matching of
                    Just impDecl ->
-                      ReplaceImportAt (srcLine impDecl) (HS.prettyPrint $ addSymbol impDecl symbolName)
+                      ReplaceImportAt (srcLine impDecl) (HS.prettyPrint $ addSymbol impDecl symbol)
 
                    Nothing      ->
                       AddImportAfter (srcLine . last $ matching)
-                                     (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
+                                     (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
+      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
-           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDeclWithSymbol moduleName symbolName)
+           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
+           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
    where
-      addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolName =
-         id {HS.importSpecs = specs & _Just . _2 %~ (++ [HS.IVar $ hsName symbolName])}
+      addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbol =
+         id {HS.importSpecs = specs & _Just . _2 %~ (++ [importSpec symbol])}
 
 
 importQualifiedModule :: String -> String -> HS.Module -> ImportChange
@@ -149,23 +150,31 @@ hasQualifiedImport qualifiedName import_
    | otherwise = False
 
 
-symbolImported :: String -> HS.ImportDecl -> Bool
+symbolImported :: Symbol -> HS.ImportDecl -> Bool
 symbolImported symbol import_
-   | Just (False, symbols) <- HS.importSpecs import_
-   , any (== symbol) (symbolStrings symbols)
+   | Just (False, hsSymbols) <- HS.importSpecs import_
+   , any (imports symbol) hsSymbols
    = True
 
-   | otherwise = False
+   | otherwise 
+   = False
    where
-      symbolStrings = map symbolString
+      imports (Symbol symName)             (HS.IVar name)                    = symName == nameString name
+      imports (Symbol symName)             (HS.IAbs name)                    = symName == nameString name
+      imports (Symbol symName)             (HS.IThingAll name)               = symName == nameString name
+      imports (Symbol symName)             (HS.IThingWith name _)            = symName == nameString name
+      imports (AllOfSymbol symName)        (HS.IThingAll name)               = symName == nameString name
+      imports (SomeOfSymbol symName _    ) (HS.IThingAll name)               = symName == nameString name
+      imports (SomeOfSymbol symName names) (HS.IThingWith hsSymName hsNames) =
+         symName == nameString hsSymName && null (names \\ (map (nameString . toName) hsNames))
 
-      symbolString (HS.IVar name)         = nameString name
-      symbolString (HS.IAbs name)         = nameString name
-      symbolString (HS.IThingAll name)    = nameString name
-      symbolString (HS.IThingWith name _) = nameString name
+      imports _ _ = False
 
       nameString (HS.Ident  id)  = id
       nameString (HS.Symbol sym) = sym
+
+      toName (HS.VarName name) = name
+      toName (HS.ConName name) = name
 
 
 hasImportedSymbols :: HS.ImportDecl -> Bool
@@ -186,9 +195,9 @@ importDecl moduleName = HS.ImportDecl
    }
 
 
-importDeclWithSymbol :: String -> String -> HS.ImportDecl
-importDeclWithSymbol moduleName symbolName =
-   (importDecl moduleName) { HS.importSpecs = Just (False, [HS.IVar $ hsName symbolName]) }
+importDeclWithSymbol :: String -> Symbol -> HS.ImportDecl
+importDeclWithSymbol moduleName symbol =
+   (importDecl moduleName) { HS.importSpecs = Just (False, [importSpec symbol]) }
 
 
 qualifiedImportDecl :: String -> String -> HS.ImportDecl
@@ -198,6 +207,12 @@ qualifiedImportDecl moduleName qualifiedName =
                                                      then Just $ HS.ModuleName qualifiedName
                                                      else Nothing
                            }
+
+
+importSpec :: Symbol -> HS.ImportSpec
+importSpec (Symbol symName)             = HS.IVar $ hsName symName
+importSpec (AllOfSymbol symName)        = HS.IThingAll $ hsName symName
+importSpec (SomeOfSymbol symName names) = HS.IThingWith (hsName symName) (map (HS.VarName . hsName) names)
 
 
 hsName :: String -> HS.Name

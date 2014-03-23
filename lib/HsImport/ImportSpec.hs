@@ -16,15 +16,17 @@ import qualified Language.Haskell.Exts as HS
 import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
 import HsImport.Parse (parseFile)
+import HsImport.Symbol (Symbol(..))
 
 data ImportSpec = ImportSpec 
-   { _sourceFile     :: FilePath
-   , _parsedSrcFile  :: HS.Module
-   , _moduleToImport :: String
-   , _symbolToImport :: Maybe String
-   , _qualifiedName  :: Maybe String
-   , _saveToFile     :: Maybe FilePath
+   { _sourceFile       :: FilePath
+   , _parsedSrcFile    :: HS.Module
+   , _moduleToImport   :: String
+   , _symbolToImport   :: Maybe Symbol
+   , _qualifiedName    :: Maybe String
+   , _saveToFile       :: Maybe FilePath
    } deriving (Show)  
+
 
 makeLenses ''ImportSpec
 
@@ -38,7 +40,7 @@ hsImportSpec args
       case result of
            Right (HS.ParseOk modul) -> return $ Right $
               ImportSpec (Args.inputSrcFile args) modul
-                         (Args.moduleName args) symbolName
+                         (Args.moduleName args) symbol
                          qualifiedName saveToFile
 
            Right (HS.ParseFailed srcLoc error) -> return $ Left (show srcLoc ++ error)
@@ -46,10 +48,13 @@ hsImportSpec args
            Left error -> return $ Left error
 
    where
-      symbolName =
+      symbol =
          case Args.symbolName args of
               ""  -> Nothing
-              sym -> Just sym
+
+              name | Args.all args              -> Just $ AllOfSymbol name
+                   | ws@(_:_) <- Args.with args -> Just $ SomeOfSymbol name ws
+                   | otherwise                  -> Just $ Symbol name
 
       qualifiedName =
          case Args.qualifiedName args of

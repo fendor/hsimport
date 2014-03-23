@@ -17,14 +17,26 @@ Installation
 Examples
 --------
 
-    $ hsimport -m 'Control.Monad' SomeSource.hs`
+    $> hsimport -m 'Control.Monad' SomeSource.hs`
     => import Control.Monad
 
-    $ hsimport -m 'Control.Monad' -s 'when' SomeSource.hs
+    $> hsimport -m 'Control.Monad' -s 'when' SomeSource.hs
     => import Control.Monad (when)
 
-    $ hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs
+    $> hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs
     => import qualified Control.Monad as CM
+
+    $> hsimport -m 'Data.Maybe' -s 'Maybe'
+    => import Data.Maybe (Maybe)
+
+    $> hsimport -m 'Data.Maybe' -s 'Maybe' -a
+    => import Data.Maybe (Maybe(..))
+
+    $> hsimport -m 'Data.Maybe' -s 'Maybe' -w 'Just'
+    => import Data.Maybe (Maybe(Just))
+
+    $> hsimport -m 'Data.Maybe' -s 'Maybe' -w 'Just' -w 'Nothing'
+    => import Data.Maybe (Maybe(Just, Nothing))
 
 Text Editor Integration
 -----------------------
@@ -34,7 +46,7 @@ Text Editor Integration
 Command Line Usage
 ------------------
 
-    dan@machine ~> hsimport --help
+    $> hsimport --help
     hsimport [OPTIONS] [SOURCEFILE]
       A command line program for extending the import list of a Haskell source
       file.
@@ -43,6 +55,10 @@ Command Line Usage
       -m --modulename=ITEM     The module to import
       -s --symbolname=ITEM     The symbol to import, if empty, the entire module
                                is imported
+      -a --all                 All constructors or methods of the symbol should
+                               be imported: 'Symbol(..)'
+      -w --with=ITEM           The constructors or methods of the symbol
+                               should be imported: 'Symbol(With)'
       -q --qualifiedname=ITEM  The name to use for a qualified module import
       -o --outputsrcfile=FILE  Save modified source file to file, if empty, the
                                source file is modified inplace

@@ -3,8 +3,10 @@
 module HsImport.Args
    ( HsImportArgs(..)
    , hsImportArgs
+   , defaultArgs
    ) where
 
+import Prelude hiding (all)
 import System.Console.CmdArgs
 
 #ifdef CABAL
@@ -15,6 +17,8 @@ import Paths_hsimport (version)
 data HsImportArgs = HsImportArgs
    { moduleName    :: String
    , symbolName    :: String
+   , all           :: Bool
+   , with          :: [String]
    , qualifiedName :: String
    , inputSrcFile  :: FilePath
    , outputSrcFile :: FilePath
@@ -25,6 +29,8 @@ hsImportArgs :: IO HsImportArgs
 hsImportArgs = cmdArgs $ HsImportArgs 
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
+   , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
+   , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
    , qualifiedName = def &= help "The name to use for a qualified module import"
    , outputSrcFile = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile
    , inputSrcFile  = def &= args &= typ "SOURCEFILE"
@@ -36,6 +42,18 @@ hsImportArgs = cmdArgs $ HsImportArgs
    &= versionArg [explicit, name "version", name "v", summary versionInfo]
    where
       summaryInfo = ""
+
+
+defaultArgs :: HsImportArgs
+defaultArgs = HsImportArgs
+   { moduleName    = def
+   , symbolName    = def
+   , all           = def
+   , with          = def
+   , qualifiedName = def
+   , inputSrcFile  = def
+   , outputSrcFile = def
+   }
 
 
 versionInfo :: String
