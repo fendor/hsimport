@@ -11,6 +11,7 @@ import Data.List.Split (splitOn)
 import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
+import Data.Monoid (mconcat)
 import HsImport.Symbol (Symbol(..))
 
 type SrcLine      = Int
@@ -62,22 +63,29 @@ importModuleWithSymbol moduleName symbol module_
          then NoImportChange
          else case find hasImportedSymbols matching of
                    Just impDecl ->
-                      ReplaceImportAt (srcLine impDecl) (HS.prettyPrint $ addSymbol impDecl symbol)
+                      ReplaceImportAt (srcLine impDecl) (prettyPrint $ addSymbol impDecl symbol)
 
                    Nothing      ->
                       AddImportAfter (srcLine . last $ matching)
-                                     (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
+                                     (prettyPrint $ importDeclWithSymbol moduleName symbol)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
+      AddImportAfter (srcLine bestMatch) (prettyPrint $ importDeclWithSymbol moduleName symbol)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
-           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDeclWithSymbol moduleName symbol)
+           Just srcLine -> AddImportAfter srcLine (prettyPrint $ importDeclWithSymbol moduleName symbol)
+           Nothing      -> AddImportAtEnd (prettyPrint $ importDeclWithSymbol moduleName symbol)
    where
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbol =
          id {HS.importSpecs = specs & _Just . _2 %~ (++ [importSpec symbol])}
+
+      prettyPrint importDecl =
+         -- remove newlines from pretty printed ImportDecl
+         case lines $ HS.prettyPrint importDecl of
+              (fst : []  ) -> fst
+              (fst : rest) -> mconcat $ fst : (map (' ' :) . map (dropWhile (== ' ')) $ rest)
+              _            -> ""
 
 
 importQualifiedModule :: String -> String -> HS.Module -> ImportChange
