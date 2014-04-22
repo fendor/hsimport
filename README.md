@@ -4,9 +4,9 @@ hsimport
 A command line program for extending the import list of a Haskell source file.
 
 `hsimport` gets the module name and the symbol name to import as arguments,
-parses the given source file by using the library `haskell-src-exts` and than
-tries to only extend the import list if it's necessary. If the symbol is already
-imported or if the whole module is already imported, than the given source file
+parses the given source file using the library `haskell-src-exts` and then tries
+to only extend the import list if it's necessary. If the symbol is already
+imported or if the whole module is already imported, then the given source file
 isn't changed.
 
 Installation
