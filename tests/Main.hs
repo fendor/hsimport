@@ -73,6 +73,7 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest23" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True, A.with = ["Just"] }
    , test "SymbolTest24" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Just"] }
    , test "SymbolTest25" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Nothing", "Just"] }
+   , test "SymbolTest26" $ A.defaultArgs { A.moduleName = "Foo", A.symbolName = "bar" }
    ]
 
 
