@@ -23,12 +23,12 @@ parseFile file = do
                   HS.ParseOk _ -> return $ Right result
 
                   HS.ParseFailed srcLoc _ -> do
-                     srcResult <- parseInvalidSource (lines srcFile) 0 (HS.srcLine srcLoc)
+                     srcResult <- parseInvalidSource (lines srcFile) (HS.srcLine srcLoc) 0 (HS.srcLine srcLoc)
                      return $ Right $ fromMaybe result srcResult)
 
          (\(e :: SomeException) -> do
             let srcLines = lines srcFile
-            srcResult <- parseInvalidSource srcLines 0 (length srcLines)
+            srcResult <- parseInvalidSource srcLines (length srcLines) 0 (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
    where
       -- | replace CPP directives by a fake comment
@@ -72,23 +72,27 @@ lastImportSrcLine srcLines
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
-parseInvalidSource :: [String] -> Int -> Int -> IO (Maybe (HS.ParseResult HS.Module))
-parseInvalidSource srcLines lastValidLine firstInvalidLine
-   | null srcLines || lastValidLine >= firstInvalidLine = return Nothing
+parseInvalidSource :: [String] -> Int -> Int -> Int -> IO (Maybe (HS.ParseResult HS.Module))
+parseInvalidSource srcLines firstInvalidLine lastValidLine currLastLine
+   | null srcLines || lastValidLine >= currLastLine = return Nothing
    | otherwise =
       catch (case parseFileContents source of
                   result@(HS.ParseOk _)
-                     | (nextLine + 1) == firstInvalidLine ->
+                     | (nextLine + 1) == currLastLine ->
                         return $ Just result
                      | otherwise                          ->
-                        parseInvalidSource srcLines nextLine firstInvalidLine
+                        parseInvalidSource srcLines firstInvalidLine nextLine currLastLine
 
-                  HS.ParseFailed _ _ -> parseInvalidSource srcLines lastValidLine nextLine)
+                  HS.ParseFailed srcLoc _
+                     | HS.srcLine srcLoc == firstInvalidLine   ->
+                        parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine
+                     | otherwise                          ->
+                        parseInvalidSource srcLines firstInvalidLine nextLine currLastLine)
 
-            (\(_ :: SomeException) -> parseInvalidSource srcLines lastValidLine nextLine)
+            (\(_ :: SomeException) -> parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine)
    where
       source   = unlines $ take (nextLine + 1) srcLines
-      nextLine = lastValidLine + (floor ((realToFrac (firstInvalidLine - lastValidLine) / 2) :: Double) :: Int)
+      nextLine = lastValidLine + (floor ((realToFrac (currLastLine - lastValidLine) / 2) :: Double) :: Int)
 
 
 parseFileContents :: String -> HS.ParseResult HS.Module
