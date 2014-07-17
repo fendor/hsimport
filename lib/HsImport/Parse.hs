@@ -80,13 +80,13 @@ parseInvalidSource srcLines firstInvalidLine lastValidLine currLastLine
                   result@(HS.ParseOk _)
                      | (nextLine + 1) == currLastLine ->
                         return $ Just result
-                     | otherwise                          ->
+                     | otherwise                      ->
                         parseInvalidSource srcLines firstInvalidLine nextLine currLastLine
 
                   HS.ParseFailed srcLoc _
-                     | HS.srcLine srcLoc == firstInvalidLine   ->
+                     | HS.srcLine srcLoc == firstInvalidLine ->
                         parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine
-                     | otherwise                          ->
+                     | otherwise                             ->
                         parseInvalidSource srcLines firstInvalidLine nextLine currLastLine)
 
             (\(_ :: SomeException) -> parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine)
