@@ -2,6 +2,7 @@
 
 module HsImport.Parse
    ( parseFile
+   , lastImportSrcLine
    ) where
 
 import qualified Data.Text.IO as TIO
@@ -35,6 +36,38 @@ parseFile file = do
          if "#" `isPrefixOf` line
             then "-- fake hsimport comment"
             else line
+
+
+type SrcLine = Int
+
+-- | Expects that '[String]' starts with an import declaration and returns
+--   the last source line of the import declaration, so this function
+--   is for the handling of multine line import declarations.
+lastImportSrcLine :: [String] -> Maybe SrcLine
+lastImportSrcLine srcLines
+   | null srcLines
+   = Nothing
+
+   | "import" `isPrefixOf` head srcLines
+   = parseImport 1
+
+   | otherwise
+   = Nothing
+
+   where
+      parseImport lastLine
+         | lastLine <= numSrcLines
+         = case parseFileContents source of
+                HS.ParseOk _       -> Just lastLine
+                HS.ParseFailed _ _ -> parseImport (lastLine + 1)
+
+         | otherwise
+         = Nothing
+
+         where
+            source = unlines $ take lastLine srcLines
+
+      numSrcLines = length srcLines
 
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains

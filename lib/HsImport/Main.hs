@@ -13,6 +13,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import HsImport.ImportChange
 import HsImport.ImportSpec
+import qualified HsImport.Parse as P
 
 
 hsImport :: ImportSpec -> IO ()
@@ -31,13 +32,13 @@ hsImport spec = do
       applyChanges = foldl' applyChange
 
       applyChange srcLines (ReplaceImportAt srcLine importStr) =
-         let numDrops   = srcLine
-             numTakes   = max 0 (numDrops - 1)
+         let numTakes = max 0 (srcLine - 1)
+             numDrops = lastImportSrcLine srcLine srcLines
              in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
 
       applyChange srcLines (AddImportAfter srcLine importStr) =
-         let numTakes   = srcLine
-             numDrops   = numTakes
+         let numTakes = srcLine
+             numDrops = lastImportSrcLine srcLine srcLines
              in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
 
       applyChange srcLines (AddImportAtEnd importStr) =
@@ -48,3 +49,10 @@ hsImport spec = do
       outputFile spec
          | Just file <- spec ^. saveToFile = file
          | otherwise                       = spec ^. sourceFile
+
+      lastImportSrcLine fstLine srcLines
+         | Just lastLine <- P.lastImportSrcLine $ drop (max 0 (fstLine - 1)) srcLines
+         = fstLine + (lastLine - 1)
+
+         | otherwise
+         = fstLine
