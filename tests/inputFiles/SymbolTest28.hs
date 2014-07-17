@@ -12,6 +12,5 @@ import Ugah.Blub ( a
 f :: Int -> Int
 f = (+ 3)
 
-g :: Int -> Int
-g =
-   where
+r :: Int -> Int
+r =
