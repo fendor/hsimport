@@ -44,6 +44,7 @@ library
     other-modules:
         HsImport.ImportChange
         HsImport.Parse
+        HsImport.PrettyPrint
         Paths_hsimport
     ghc-options: -W
  

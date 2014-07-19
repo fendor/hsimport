@@ -11,15 +11,13 @@ import Data.List.Split (splitOn)
 import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
-import Data.Monoid (mconcat)
 import HsImport.Symbol (Symbol(..))
 
-type SrcLine      = Int
-type ImportString = String
+type SrcLine = Int
 
-data ImportChange = ReplaceImportAt SrcLine ImportString
-                  | AddImportAfter SrcLine ImportString
-                  | AddImportAtEnd ImportString
+data ImportChange = ReplaceImportAt SrcLine HS.ImportDecl
+                  | AddImportAfter SrcLine HS.ImportDecl
+                  | AddImportAtEnd HS.ImportDecl
                   | NoImportChange
                   deriving (Show)
 
@@ -45,15 +43,15 @@ importModule moduleName module_
    | matching@(_:_) <- matchingImports moduleName module_ =
       if any entireModuleImported matching
          then NoImportChange
-         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ importDecl moduleName)
+         else AddImportAfter (srcLine . last $ matching) (importDecl moduleName)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ importDecl moduleName)
+      AddImportAfter (srcLine bestMatch) (importDecl moduleName)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ importDecl moduleName)
-           Nothing      -> AddImportAtEnd (HS.prettyPrint $ importDecl moduleName)
+           Just srcLine -> AddImportAfter srcLine (importDecl moduleName)
+           Nothing      -> AddImportAtEnd (importDecl moduleName)
 
 
 importModuleWithSymbol :: String -> Symbol -> HS.Module -> ImportChange
@@ -63,29 +61,22 @@ importModuleWithSymbol moduleName symbol module_
          then NoImportChange
          else case find hasImportedSymbols matching of
                    Just impDecl ->
-                      ReplaceImportAt (srcLine impDecl) (prettyPrint $ addSymbol impDecl symbol)
+                      ReplaceImportAt (srcLine impDecl) (addSymbol impDecl symbol)
 
                    Nothing      ->
                       AddImportAfter (srcLine . last $ matching)
-                                     (prettyPrint $ importDeclWithSymbol moduleName symbol)
+                                     (importDeclWithSymbol moduleName symbol)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (prettyPrint $ importDeclWithSymbol moduleName symbol)
+      AddImportAfter (srcLine bestMatch) (importDeclWithSymbol moduleName symbol)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (prettyPrint $ importDeclWithSymbol moduleName symbol)
-           Nothing      -> AddImportAtEnd (prettyPrint $ importDeclWithSymbol moduleName symbol)
+           Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol moduleName symbol)
+           Nothing      -> AddImportAtEnd (importDeclWithSymbol moduleName symbol)
    where
       addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbol =
          id {HS.importSpecs = specs & _Just . _2 %~ (++ [importSpec symbol])}
-
-      prettyPrint importDecl =
-         -- remove newlines from pretty printed ImportDecl
-         case lines $ HS.prettyPrint importDecl of
-              (fst : []  ) -> fst
-              (fst : rest) -> mconcat $ fst : (map (' ' :) . map (dropWhile (== ' ')) $ rest)
-              _            -> ""
 
 
 importQualifiedModule :: String -> String -> HS.Module -> ImportChange
@@ -93,23 +84,23 @@ importQualifiedModule moduleName qualifiedName module_
    | matching@(_:_) <- matchingImports moduleName module_ =
       if any (hasQualifiedImport qualifiedName) matching
          then NoImportChange
-         else AddImportAfter (srcLine . last $ matching) (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
+         else AddImportAfter (srcLine . last $ matching) (qualifiedImportDecl moduleName qualifiedName)
 
    | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
+      AddImportAfter (srcLine bestMatch) (qualifiedImportDecl moduleName qualifiedName)
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
-           Nothing      -> AddImportAtEnd (HS.prettyPrint $ qualifiedImportDecl moduleName qualifiedName)
+           Just srcLine -> AddImportAfter srcLine (qualifiedImportDecl moduleName qualifiedName)
+           Nothing      -> AddImportAtEnd (qualifiedImportDecl moduleName qualifiedName)
 
 
 matchingImports :: String -> HS.Module -> [HS.ImportDecl]
 matchingImports moduleName (HS.Module _ _ _ _ _ imports _) =
-   [ i 
+   [ i
    | i@HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
    , moduleName == name
-   ] 
+   ]
 
 
 bestMatchingImport :: String -> HS.Module -> Maybe HS.ImportDecl
@@ -138,9 +129,9 @@ bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
                   loop num _ [] = num
 
       splittedMod  = splitOn "." moduleName
-      splittedMods = [ splitOn "." name 
+      splittedMods = [ splitOn "." name
                      | HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
-                     ]  
+                     ]
 
 
 entireModuleImported :: HS.ImportDecl -> Bool
@@ -164,7 +155,7 @@ symbolImported symbol import_
    , any (imports symbol) hsSymbols
    = True
 
-   | otherwise 
+   | otherwise
    = False
    where
       imports (Symbol symName)             (HS.IVar name)                    = symName == nameString name

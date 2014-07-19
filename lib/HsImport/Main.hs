@@ -14,6 +14,7 @@ import qualified Data.Text.IO as TIO
 import HsImport.ImportChange
 import HsImport.ImportSpec
 import qualified HsImport.Parse as P
+import HsImport.PrettyPrint (prettyPrint)
 
 
 hsImport :: ImportSpec -> IO ()
@@ -31,18 +32,18 @@ hsImport spec = do
    where
       applyChanges = foldl' applyChange
 
-      applyChange srcLines (ReplaceImportAt srcLine importStr) =
+      applyChange srcLines (ReplaceImportAt srcLine importDecl) =
          let numTakes = max 0 (srcLine - 1)
              numDrops = lastImportSrcLine srcLine srcLines
-             in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
+             in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
-      applyChange srcLines (AddImportAfter srcLine importStr) =
+      applyChange srcLines (AddImportAfter srcLine importDecl) =
          let numTakes = srcLine
              numDrops = lastImportSrcLine srcLine srcLines
-             in take numTakes srcLines ++ [importStr] ++ drop numDrops srcLines
+             in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
-      applyChange srcLines (AddImportAtEnd importStr) =
-         srcLines ++ [importStr]
+      applyChange srcLines (AddImportAtEnd importDecl) =
+         srcLines ++ [prettyPrint importDecl]
 
       applyChange srcLines NoImportChange = srcLines
 
