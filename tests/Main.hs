@@ -5,7 +5,9 @@ import Test.Tasty
 import Test.Tasty.Golden
 import System.FilePath
 import System.IO (hPutStrLn, stderr)
-import HsImport (hsImport, hsImportSpec)
+import HsImport.Main (hsimport_)
+import HsImport.ImportSpec (hsImportSpec)
+import HsImport.Config (defaultConfig)
 import qualified HsImport.Args as A
 
 main = defaultMain tests
@@ -87,7 +89,7 @@ test testName args =
          spec <- hsImportSpec (args { A.inputSrcFile = inputFile, A.outputSrcFile = outputFile })
          case spec of
               Left error  -> hPutStrLn stderr ("hsimport: " ++ error)
-              Right spec_ -> hsImport spec_
+              Right spec_ -> hsimport_ defaultConfig spec_
 
       diff ref new = ["diff", "-u", ref, new]
 

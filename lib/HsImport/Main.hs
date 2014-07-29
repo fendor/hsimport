@@ -1,24 +1,48 @@
 {-# Language PatternGuards #-}
 
 module HsImport.Main
-   ( hsImport
+   ( hsimport
+   , hsimport_
    ) where
 
 import Control.Lens
 import Control.Applicative ((<$>))
 import Control.Monad (when)
+import System.Exit (exitFailure, exitSuccess)
+import System.IO (hPutStrLn, stderr)
 import Data.Maybe (isJust)
 import Data.List (foldl')
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import qualified Config.Dyre as Dyre
 import HsImport.ImportChange
 import HsImport.ImportSpec
+import qualified HsImport.Args as Args
+import HsImport.Config
 import qualified HsImport.Parse as P
-import HsImport.PrettyPrint (prettyPrint)
 
 
-hsImport :: ImportSpec -> IO ()
-hsImport spec = do
+hsimport = Dyre.wrapMain $ Dyre.defaultParams
+   { Dyre.projectName = "hsimport"
+   , Dyre.realMain    = realMain
+   , Dyre.showError   = \config err -> config { configError = Just err }
+   }
+   where
+      realMain :: Config -> IO ()
+      realMain config = do
+         case configError config of
+              Just error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
+              _          -> return ()
+
+         args      <- Args.hsImportArgs
+         maybeSpec <- hsImportSpec args
+         case maybeSpec of
+              Left  error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
+              Right spec  -> hsimport_ config spec                    >> exitSuccess
+
+
+hsimport_ :: Config -> ImportSpec -> IO ()
+hsimport_ Config { prettyPrint = prettyPrint } spec = do
    let impChanges = importChanges (spec ^. moduleToImport)
                                   (spec ^. symbolToImport)
                                   (spec ^. qualifiedName)
