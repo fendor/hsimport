@@ -5,9 +5,11 @@ import Test.Tasty
 import Test.Tasty.Golden
 import System.FilePath
 import System.IO (hPutStrLn, stderr)
+import Data.List (intercalate)
+import qualified Language.Haskell.Exts as HS
 import HsImport.Main (hsimport_)
 import HsImport.ImportSpec (hsImportSpec)
-import HsImport.Config (defaultConfig)
+import HsImport.Config (Config(..), defaultConfig)
 import qualified HsImport.Args as A
 
 main = defaultMain tests
@@ -78,18 +80,40 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest26" $ A.defaultArgs { A.moduleName = "Foo", A.symbolName = "bar" }
    , test "SymbolTest27" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "g" }
    , test "SymbolTest28" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
+   , testPrettyPrint "SymbolTest29" $ A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" }
    ]
 
 
 test :: String -> A.HsImportArgs -> TestTree
-test testName args =
+test testName args = test_ testName defaultConfig args
+
+
+testPrettyPrint :: String -> A.HsImportArgs -> TestTree
+testPrettyPrint testName args = test_ testName config args
+   where
+      config = defaultConfig { prettyPrint = prettyPrint }
+
+      prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSpecs = Just (False, syms) } =
+         "import " ++ modName ++ " ( " ++ ppSyms ++ " )"
+         where
+            ppSyms = intercalate " , " symNames
+            symNames = map symName syms
+
+            symName (HS.IVar (HS.Ident name)) = name
+            symName _ = ""
+
+      prettyPrint _ = "Uupps"
+
+
+test_ :: String -> Config -> A.HsImportArgs -> TestTree
+test_ testName config args =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
          spec <- hsImportSpec (args { A.inputSrcFile = inputFile, A.outputSrcFile = outputFile })
          case spec of
               Left error  -> hPutStrLn stderr ("hsimport: " ++ error)
-              Right spec_ -> hsimport_ defaultConfig spec_
+              Right spec_ -> hsimport_ config spec_
 
       diff ref new = ["diff", "-u", ref, new]
 
