@@ -62,8 +62,8 @@ hsimport_ Config { prettyPrint = prettyPrint } spec = do
              in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
       applyChange srcLines (AddImportAfter srcLine importDecl) =
-         let numTakes = srcLine
-             numDrops = lastImportSrcLine srcLine srcLines
+         let numTakes = lastImportSrcLine srcLine srcLines
+             numDrops = numTakes
              in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
       applyChange srcLines (AddImportAtEnd importDecl) =
