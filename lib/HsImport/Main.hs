@@ -17,8 +17,10 @@ import qualified Data.Text.IO as TIO
 import qualified Config.Dyre as Dyre
 import HsImport.ImportChange
 import HsImport.ImportSpec
+import HsImport.ImportPos (ImportPos(..))
 import qualified HsImport.Args as Args
 import HsImport.Config
+import HsImport.Utils
 import qualified HsImport.Parse as P
 
 
@@ -42,7 +44,7 @@ hsimport = Dyre.wrapMain $ Dyre.defaultParams
 
 
 hsimport_ :: Config -> ImportSpec -> IO ()
-hsimport_ Config { prettyPrint = prettyPrint } spec = do
+hsimport_ Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (spec ^. moduleToImport)
                                   (spec ^. symbolToImport)
                                   (spec ^. qualifiedName)
@@ -69,6 +71,12 @@ hsimport_ Config { prettyPrint = prettyPrint } spec = do
       applyChange srcLines (AddImportAtEnd importDecl) =
          srcLines ++ [prettyPrint importDecl]
 
+      applyChange srcLines (FindImportPos importDecl) =
+         case findImportPos importDecl allImportDecls of
+              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (srcLine impDecl) importDecl)
+              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 (srcLine impDecl - 1)) importDecl)
+              _                     -> applyChange srcLines (AddImportAfter (srcLine . last $ allImportDecls) importDecl)
+
       applyChange srcLines NoImportChange = srcLines
 
       outputFile spec
@@ -81,3 +89,5 @@ hsimport_ Config { prettyPrint = prettyPrint } spec = do
 
          | otherwise
          = fstLine
+
+      allImportDecls = importDecls $ spec ^. parsedSrcFile

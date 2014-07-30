@@ -7,18 +7,21 @@ module HsImport.ImportChange
 
 import Data.Maybe
 import Data.List (find, (\\))
-import Data.List.Split (splitOn)
 import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
 import HsImport.Symbol (Symbol(..))
+import HsImport.ImportPos (matchingImports)
+import HsImport.Utils
 
 type SrcLine = Int
 
-data ImportChange = ReplaceImportAt SrcLine HS.ImportDecl
-                  | AddImportAfter SrcLine HS.ImportDecl
-                  | AddImportAtEnd HS.ImportDecl
-                  | NoImportChange
+-- | How the import declarations should be changed
+data ImportChange = ReplaceImportAt SrcLine HS.ImportDecl -- ^ replace the import declaration at SrcLine
+                  | AddImportAfter SrcLine HS.ImportDecl  -- ^ add import declaration after SrcLine
+                  | AddImportAtEnd HS.ImportDecl          -- ^ add import declaration at end of source file
+                  | FindImportPos HS.ImportDecl           -- ^ search for an insert position for the import declaration
+                  | NoImportChange                        -- ^ no changes of the import declarations
                   deriving (Show)
 
 
@@ -40,13 +43,13 @@ importChanges moduleName Nothing Nothing module_ =
 
 importModule :: String -> HS.Module -> ImportChange
 importModule moduleName module_
-   | matching@(_:_) <- matchingImports moduleName module_ =
+   | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any entireModuleImported matching
          then NoImportChange
-         else AddImportAfter (srcLine . last $ matching) (importDecl moduleName)
+         else FindImportPos $ importDecl moduleName
 
-   | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (importDecl moduleName)
+   | not $ null (importDecls module_) =
+      FindImportPos $ importDecl moduleName
 
    | otherwise =
       case srcLineForNewImport module_ of
@@ -56,7 +59,7 @@ importModule moduleName module_
 
 importModuleWithSymbol :: String -> Symbol -> HS.Module -> ImportChange
 importModuleWithSymbol moduleName symbol module_
-   | matching@(_:_) <- matchingImports moduleName module_ =
+   | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any entireModuleImported matching || any (symbolImported symbol) matching
          then NoImportChange
          else case find hasImportedSymbols matching of
@@ -64,11 +67,10 @@ importModuleWithSymbol moduleName symbol module_
                       ReplaceImportAt (srcLine impDecl) (addSymbol impDecl symbol)
 
                    Nothing      ->
-                      AddImportAfter (srcLine . last $ matching)
-                                     (importDeclWithSymbol moduleName symbol)
+                      FindImportPos $ importDeclWithSymbol moduleName symbol
 
-   | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (importDeclWithSymbol moduleName symbol)
+   | not $ null (importDecls module_) =
+      FindImportPos $ importDeclWithSymbol moduleName symbol
 
    | otherwise =
       case srcLineForNewImport module_ of
@@ -81,57 +83,18 @@ importModuleWithSymbol moduleName symbol module_
 
 importQualifiedModule :: String -> String -> HS.Module -> ImportChange
 importQualifiedModule moduleName qualifiedName module_
-   | matching@(_:_) <- matchingImports moduleName module_ =
+   | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any (hasQualifiedImport qualifiedName) matching
          then NoImportChange
-         else AddImportAfter (srcLine . last $ matching) (qualifiedImportDecl moduleName qualifiedName)
+         else FindImportPos $ qualifiedImportDecl moduleName qualifiedName
 
-   | Just bestMatch <- bestMatchingImport moduleName module_ =
-      AddImportAfter (srcLine bestMatch) (qualifiedImportDecl moduleName qualifiedName)
+   | not $ null (importDecls module_) =
+      FindImportPos $ qualifiedImportDecl moduleName qualifiedName
 
    | otherwise =
       case srcLineForNewImport module_ of
            Just srcLine -> AddImportAfter srcLine (qualifiedImportDecl moduleName qualifiedName)
            Nothing      -> AddImportAtEnd (qualifiedImportDecl moduleName qualifiedName)
-
-
-matchingImports :: String -> HS.Module -> [HS.ImportDecl]
-matchingImports moduleName (HS.Module _ _ _ _ _ imports _) =
-   [ i
-   | i@HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
-   , moduleName == name
-   ]
-
-
-bestMatchingImport :: String -> HS.Module -> Maybe HS.ImportDecl
-bestMatchingImport moduleName (HS.Module _ _ _ _ _ imports _) =
-   case ifoldl' computeMatches Nothing splittedMods of
-        Just (idx, _) -> Just $ imports !! idx
-        _             -> Nothing
-   where
-      computeMatches :: Int -> Maybe (Int, Int) -> [String] -> Maybe (Int, Int)
-      computeMatches idx matches mod =
-         let num' = numMatches splittedMod mod
-             in case matches of
-                     Just (_, num) | num' >= num -> Just (idx, num')
-                                   | otherwise   -> matches
-
-                     Nothing | num' > 0  -> Just (idx, num')
-                             | otherwise -> Nothing
-         where
-            numMatches = loop 0
-               where
-                  loop num (a:as) (b:bs)
-                     | a == b    = loop (num + 1) as bs
-                     | otherwise = num
-
-                  loop num [] _ = num
-                  loop num _ [] = num
-
-      splittedMod  = splitOn "." moduleName
-      splittedMods = [ splitOn "." name
-                     | HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
-                     ]
 
 
 entireModuleImported :: HS.ImportDecl -> Bool
@@ -232,40 +195,3 @@ srcLineForNewImport (HS.Module modSrcLoc _ _ _ _ imports decls)
    = Just $ max 0 (HS.srcLine sLoc - 1)
 
    | otherwise = Nothing
-
-
-srcLine :: HS.ImportDecl -> SrcLine
-srcLine = HS.srcLine . HS.importLoc
-
-
-declSrcLoc :: HS.Decl -> Maybe HS.SrcLoc
-declSrcLoc decl =
-   case decl of
-        HS.TypeDecl srcLoc _ _ _          -> Just srcLoc
-        HS.TypeFamDecl srcLoc _ _ _       -> Just srcLoc
-        HS.DataDecl srcLoc _ _ _ _ _ _    -> Just srcLoc
-        HS.GDataDecl srcLoc _ _ _ _ _ _ _ -> Just srcLoc
-        HS.DataFamDecl srcLoc _ _ _ _     -> Just srcLoc
-        HS.TypeInsDecl srcLoc _ _         -> Just srcLoc
-        HS.DataInsDecl srcLoc _ _ _ _     -> Just srcLoc
-        HS.GDataInsDecl srcLoc _ _ _ _ _  -> Just srcLoc
-        HS.ClassDecl srcLoc _ _ _ _ _     -> Just srcLoc
-        HS.InstDecl srcLoc _ _ _ _        -> Just srcLoc
-        HS.DerivDecl srcLoc _ _ _         -> Just srcLoc
-        HS.InfixDecl srcLoc _ _ _         -> Just srcLoc
-        HS.DefaultDecl srcLoc _           -> Just srcLoc
-        HS.SpliceDecl srcLoc _            -> Just srcLoc
-        HS.TypeSig srcLoc _ _             -> Just srcLoc
-        HS.FunBind _                      -> Nothing
-        HS.PatBind srcLoc _ _ _ _         -> Just srcLoc
-        HS.ForImp srcLoc _ _ _ _ _        -> Just srcLoc
-        HS.ForExp srcLoc _ _ _ _          -> Just srcLoc
-        HS.RulePragmaDecl srcLoc _        -> Just srcLoc
-        HS.DeprPragmaDecl srcLoc _        -> Just srcLoc
-        HS.WarnPragmaDecl srcLoc _        -> Just srcLoc
-        HS.InlineSig srcLoc _ _ _         -> Just srcLoc
-        HS.InlineConlikeSig srcLoc _ _    -> Just srcLoc
-        HS.SpecSig srcLoc _ _ _           -> Just srcLoc
-        HS.SpecInlineSig srcLoc _ _ _ _   -> Just srcLoc
-        HS.InstSig srcLoc _ _ _           -> Just srcLoc
-        HS.AnnPragma srcLoc _             -> Just srcLoc

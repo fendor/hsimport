@@ -6,17 +6,22 @@ module HsImport.Config
 
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport.PrettyPrint as PP
+import qualified HsImport.ImportPos as IP
 
-
--- | user definable configuration for hsImport
+-- | User definable configuration for hsImport.
 data Config = Config
-   { prettyPrint :: HS.ImportDecl -> String  -- ^ function for pretty printing of the import declarations
-   , configError :: Maybe String             -- ^ error during configuration of hsImport
+   { -- | function for pretty printing of the import declarations
+     prettyPrint :: HS.ImportDecl -> String
+     -- | function for finding the position of new import declarations
+   , findImportPos :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe IP.ImportPos
+     -- | error during configuration of hsimport
+   , configError :: Maybe String
    }
 
 
 defaultConfig :: Config
 defaultConfig = Config
-   { prettyPrint = PP.prettyPrint
-   , configError = Nothing
+   { prettyPrint   = PP.prettyPrint
+   , findImportPos = IP.findImportPos
+   , configError   = Nothing
    }

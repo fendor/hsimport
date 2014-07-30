@@ -39,6 +39,7 @@ library
         HsImport.Args
         HsImport.ImportSpec
         HsImport.Symbol
+        HsImport.ImportPos
     exposed: True
     buildable: True
     cpp-options: -DCABAL
@@ -47,6 +48,7 @@ library
         HsImport.ImportChange
         HsImport.Parse
         HsImport.PrettyPrint
+        HsImport.Utils
         Paths_hsimport
     ghc-options: -W
  
