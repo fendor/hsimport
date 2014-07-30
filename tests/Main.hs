@@ -9,8 +9,9 @@ import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import HsImport.Main (hsimport_)
 import HsImport.ImportSpec (hsImportSpec)
-import HsImport.Config (Config(..), defaultConfig)
+import qualified HsImport.Config as C
 import qualified HsImport.Args as A
+import qualified HsImport.ImportPos as P
 
 main = defaultMain tests
 
@@ -46,6 +47,10 @@ moduleTests = testGroup "Module Tests"
    , test "ModuleTest24" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "CM" }
    , test "ModuleTest25" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "Control.Monad" }
    , test "ModuleTest26" $ A.defaultArgs { A.moduleName = "Control.Monad" }
+   , test_ "ModuleTest27" (C.defaultConfig { C.findImportPos = importPosBeforeFirst }) (A.defaultArgs { A.moduleName = "Control.Monad" })
+   , test_ "ModuleTest28" (C.defaultConfig { C.findImportPos = importPosAfterFirst }) (A.defaultArgs { A.moduleName = "Control.Monad" })
+   , test_ "ModuleTest29" (C.defaultConfig { C.findImportPos = importPosBeforeLast }) (A.defaultArgs { A.moduleName = "Control.Monad" })
+   , test_ "ModuleTest30" (C.defaultConfig { C.findImportPos = importPosAfterLast }) (A.defaultArgs { A.moduleName = "Control.Monad" })
    ]
 
 
@@ -80,32 +85,15 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest26" $ A.defaultArgs { A.moduleName = "Foo", A.symbolName = "bar" }
    , test "SymbolTest27" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "g" }
    , test "SymbolTest28" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
-   , testPrettyPrint "SymbolTest29" $ A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" }
+   , test_ "SymbolTest29" (C.defaultConfig { C.prettyPrint = prettyPrint }) (A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" })
    ]
 
 
 test :: String -> A.HsImportArgs -> TestTree
-test testName args = test_ testName defaultConfig args
+test testName args = test_ testName C.defaultConfig args
 
 
-testPrettyPrint :: String -> A.HsImportArgs -> TestTree
-testPrettyPrint testName args = test_ testName config args
-   where
-      config = defaultConfig { prettyPrint = prettyPrint }
-
-      prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSpecs = Just (False, syms) } =
-         "import " ++ modName ++ " ( " ++ ppSyms ++ " )"
-         where
-            ppSyms = intercalate " , " symNames
-            symNames = map symName syms
-
-            symName (HS.IVar (HS.Ident name)) = name
-            symName _ = ""
-
-      prettyPrint _ = "Uupps"
-
-
-test_ :: String -> Config -> A.HsImportArgs -> TestTree
+test_ :: String -> C.Config -> A.HsImportArgs -> TestTree
 test_ testName config args =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
@@ -120,3 +108,36 @@ test_ testName config args =
       goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
       outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
       inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
+
+
+prettyPrint :: HS.ImportDecl -> String
+prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSpecs = Just (False, syms) } =
+   "import " ++ modName ++ " ( " ++ ppSyms ++ " )"
+   where
+      ppSyms = intercalate " , " symNames
+      symNames = map symName syms
+
+      symName (HS.IVar (HS.Ident name)) = name
+      symName _ = ""
+
+prettyPrint _ = "Uupps"
+
+
+importPosAfterLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosAfterLast _ []      = Nothing
+importPosAfterLast _ imports = Just . P.After . last $ imports
+
+
+importPosBeforeLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosBeforeLast _ []      = Nothing
+importPosBeforeLast _ imports = Just . P.Before . last $ imports
+
+
+importPosAfterFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosAfterFirst _ []      = Nothing
+importPosAfterFirst _ imports = Just . P.After . head $ imports
+
+
+importPosBeforeFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosBeforeFirst _ []      = Nothing
+importPosBeforeFirst _ imports = Just . P.Before . head $ imports
