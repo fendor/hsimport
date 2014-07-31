@@ -1,5 +1,5 @@
 name: hsimport
-version: 0.4
+version: 0.5
 cabal-version: >=1.9.2
 build-type: Simple
 license: BSD3
@@ -60,8 +60,8 @@ executable hsimport
     buildable: True
     cpp-options: -DCABAL
     hs-source-dirs: exe
-    ghc-options: -W
     ghc-prof-options: -prof -fprof-auto -rtsopts
+    ghc-options: -W
  
 test-suite hsimport-tests
     build-depends:
