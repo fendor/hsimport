@@ -38,6 +38,51 @@ Examples
     $> hsimport -m 'Data.Maybe' -s 'Maybe' -w 'Just' -w 'Nothing'
     => import Data.Maybe (Maybe(Just, Nothing))
 
+Configuration
+-------------
+
+You can configure how the import declarations are pretty printed and where they're placed
+by writing a configuration file like:
+
+    -- ~/.config/hsimport/hsimport.hs
+    import qualified Language.Haskell.Exts as HS
+    import HsImport
+
+    main :: IO ()
+    main = hsimport $ defaultConfig { prettyPrint = prettyPrint, findImportPos = findImportPos }
+       where
+          -- This is a bogus implementation of prettyPrint, because it doesn't handle the
+          -- qualified import case nor does it considers any explicitely imported or hidden symbols.
+          prettyPrint :: HS.ImportDecl -> String
+          prettyPrint (HS.ImportDecl { HS.importModule = HS.ModuleName modName }) =
+             "import " ++ modName
+
+          -- This findImportPos implementation will always add the new import declaration
+          -- at the end of the current ones. The data type ImportPos has the two constructors
+          -- After and Before.
+          findImportPos :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe ImportPos
+          findImportPos _         []             = Nothing
+          findImportPos newImport currentImports = Just . After . last $ currentImports
+
+The position of the configuration file depends on the result of `getUserConfigDir "hsimport"`,
+which is a function from the package [xdg-basedir](<https://hackage.haskell.org/package/xdg-basedir>),
+on linux like systems it is `~/.config/hsimport/hsimport.hs`.
+
+If you've modified the configuration file, then the next call of `hsimport` will ensure a rebuild.
+If you've installed `hsimport` with `cabal install`, without using a sandbox, then this should just work.
+
+If you've build `hsimport` inside of a sandbox, then you most likely have to temporary modify the
+`GHC_PACKAGE_PATH` for the next call of `hsimport`, to point `ghc` to the global database and
+to the package database of the sandbox.
+
+    # global package database
+    $> export GLOBAL_PKG_DB=/usr/lib/ghc/package.conf.d/
+
+    # hsimport sandbox package database
+    $> export SANDBOX_PKG_DB=/home/you/hsimport-build-dir/.cabal-sandbox/*-packages.conf.d/
+
+    $> GHC_PACKAGE_PATH=$GLOBAL_PKG_DB:$SANDBOX_PKG_DB hsimport --help
+
 Text Editor Integration
 -----------------------
 
