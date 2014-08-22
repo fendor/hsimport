@@ -86,6 +86,9 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest27" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "g" }
    , test "SymbolTest28" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
    , test_ "SymbolTest29" (C.defaultConfig { C.prettyPrint = prettyPrint }) (A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" })
+   , test_ "SymbolTest30" (C.defaultConfig { C.prettyPrint = prettyPrint }) (A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" })
+   , test "SymbolTest31" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
+   , test "SymbolTest32" $ A.defaultArgs { A.moduleName = "Control.Foo", A.symbolName = "foo" }
    ]
 
 
