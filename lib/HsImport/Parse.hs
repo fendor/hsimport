@@ -1,4 +1,4 @@
-{-# Language ScopedTypeVariables #-}
+{-# Language ScopedTypeVariables, PatternGuards #-}
 
 module HsImport.Parse
    ( parseFile
@@ -58,7 +58,13 @@ lastImportSrcLine srcLines
       parseImport lastLine
          | lastLine <= numSrcLines
          = case parseFileContents source of
-                HS.ParseOk _       -> Just lastLine
+                HS.ParseOk module_
+                   | oneImportDeclWithoutSymbols module_ && startsWithImportDeclSymbols lastLine
+                     -> parseImport (lastLine + 1)
+
+                   | otherwise
+                     -> Just lastLine
+
                 HS.ParseFailed _ _ -> parseImport (lastLine + 1)
 
          | otherwise
@@ -68,6 +74,21 @@ lastImportSrcLine srcLines
             source = unlines $ take lastLine srcLines
 
       numSrcLines = length srcLines
+
+      -- | Returns True if the module contains one ImportDecl without any explicitely
+      --   listed symbols.
+      oneImportDeclWithoutSymbols (HS.Module _ _ _ _ _ [HS.ImportDecl {HS.importSpecs = Nothing}] _) = True
+      oneImportDeclWithoutSymbols _                                                                  = False
+
+      -- | Returns True if the line represents the starting of a ImportDecl symbol list.
+      startsWithImportDeclSymbols lineNum
+         | (line : _) <- drop lineNum srcLines
+         , (' ' : _)  <- line
+         , ('(' : _)  <- dropWhile (== ' ') line
+         = True
+
+         | otherwise
+         = False
 
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
