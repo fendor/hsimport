@@ -12,6 +12,7 @@ category: Utils
 author: Daniel Trstenjak
 extra-source-files:
     README.md
+    CHANGELOG
     tests/inputFiles/*.hs
     tests/goldenFiles/*.hs
     tests/outputFiles/.gitignore

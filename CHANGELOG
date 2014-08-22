@@ -1,0 +1,11 @@
+0.5.1
+-----
+* Better handling of multi line imports like:
+
+   import Control.Monad
+      (when)
+
+   import Control.Monad
+      ( when
+      , unless
+      )
