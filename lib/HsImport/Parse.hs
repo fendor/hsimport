@@ -82,9 +82,9 @@ lastImportSrcLine srcLines
 
       -- | Returns True if the line represents the starting of a ImportDecl symbol list.
       startsWithImportDeclSymbols lineNum
-         | (line : _) <- drop (lineNum - 1) srcLines
-         , (' ' : _)  <- line
-         , ('(' : _)  <- dropWhile (== ' ') line
+         | line : _ <- drop (lineNum - 1) srcLines
+         , ' '  : _ <- line
+         , '('  : _ <- dropWhile (== ' ') line
          = True
 
          | otherwise
