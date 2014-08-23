@@ -59,7 +59,7 @@ lastImportSrcLine srcLines
          | lastLine <= numSrcLines
          = case parseFileContents source of
                 HS.ParseOk module_
-                   | oneImportDeclWithoutSymbols module_ && startsWithImportDeclSymbols lastLine
+                   | oneImportDeclWithoutSymbols module_ && startsWithImportDeclSymbols (lastLine + 1)
                      -> parseImport (lastLine + 1)
 
                    | otherwise
@@ -82,7 +82,7 @@ lastImportSrcLine srcLines
 
       -- | Returns True if the line represents the starting of a ImportDecl symbol list.
       startsWithImportDeclSymbols lineNum
-         | (line : _) <- drop lineNum srcLines
+         | (line : _) <- drop (lineNum - 1) srcLines
          , (' ' : _)  <- line
          , ('(' : _)  <- dropWhile (== ' ') line
          = True
