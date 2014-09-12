@@ -26,6 +26,9 @@ Examples
     $> hsimport -m 'Control.Monad' -q 'CM' SomeSource.hs
     => import qualified Control.Monad as CM
 
+    $> hsimport -m 'Control.Monad' --as 'CM' SomeSource.hs
+    => import Control.Monad as CM
+
     $> hsimport -m 'Data.Maybe' -s 'Maybe'
     => import Data.Maybe (Maybe)
 

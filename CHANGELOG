@@ -1,3 +1,10 @@
+0.6
+---
+* Add option '--as'
+
+    $> hsimport -m 'Control.Monad' --as 'CM' SomeSource.hs
+    => import Control.Monad as CM
+
 0.5.2
 -----
 * Build/tested with GHC 7.8.3
