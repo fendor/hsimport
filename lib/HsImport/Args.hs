@@ -31,6 +31,7 @@ hsImportArgs = cmdArgs $ HsImportArgs
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
    , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
+                         &= name "all" &= name "a"
    , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
    , qualifiedName = def &= help "The name to use for a qualified module import"
    , as            = def &= help "The name to use for an unqualified module import" &= name "as"
