@@ -47,6 +47,7 @@ moduleTests = testGroup "Module Tests"
    , test_ "ModuleTest28" (HI.defaultConfig { HI.findImportPos = importPosAfterFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
    , test_ "ModuleTest29" (HI.defaultConfig { HI.findImportPos = importPosBeforeLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
    , test_ "ModuleTest30" (HI.defaultConfig { HI.findImportPos = importPosAfterLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , test "ModuleTest31" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.as = "CM" }
    ]
 
 
