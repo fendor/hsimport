@@ -2,10 +2,9 @@
 
 module HsImport.Main
    ( hsimport
-   , hsimport_
+   , hsimportWithArgs
    ) where
 
-import Control.Lens
 import Control.Applicative ((<$>))
 import Control.Monad (when)
 import System.Exit (exitFailure, exitSuccess)
@@ -24,6 +23,7 @@ import HsImport.Utils
 import qualified HsImport.Parse as P
 
 
+hsimport :: Config -> IO ()
 hsimport = Dyre.wrapMain $ Dyre.defaultParams
    { Dyre.projectName = "hsimport"
    , Dyre.realMain    = realMain
@@ -36,23 +36,29 @@ hsimport = Dyre.wrapMain $ Dyre.defaultParams
               Just error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
               _          -> return ()
 
-         args      <- Args.hsImportArgs
-         maybeSpec <- hsImportSpec args
-         case maybeSpec of
-              Left  error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
-              Right spec  -> hsimport_ config spec                    >> exitSuccess
+         args     <- Args.hsImportArgs
+         maybeErr <- hsimportWithArgs config args
+         case maybeErr of
+              Just err -> hPutStrLn stderr ("hsimport: " ++ err) >> exitFailure
+              _        -> exitSuccess
 
 
-hsimport_ :: Config -> ImportSpec -> IO ()
-hsimport_ Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
-   let impChanges = importChanges (spec ^. moduleToImport)
-                                  (spec ^. symbolToImport)
-                                  (spec ^. qualifiedName)
-                                  (spec ^. parsedSrcFile)
+type Error = String
+hsimportWithArgs :: Config -> Args.HsImportArgs -> IO (Maybe Error)
+hsimportWithArgs config args = do
+   maybeSpec <- hsImportSpec args
+   case maybeSpec of
+        Left  error -> return $ Just error
+        Right spec  -> hsimportWithSpec config spec >> return Nothing
 
-   srcLines <- lines . T.unpack <$> TIO.readFile (spec ^. sourceFile)
+
+hsimportWithSpec :: Config -> ImportSpec -> IO ()
+hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
+   let impChanges = importChanges (moduleToImport spec) (symbolToImport spec) (parsedSrcFile spec)
+
+   srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
    let srcLines' = applyChanges srcLines impChanges
-   when (srcLines' /= srcLines || isJust (spec ^. saveToFile)) $
+   when (srcLines' /= srcLines || isJust (saveToFile spec)) $
       TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
 
    where
@@ -80,8 +86,8 @@ hsimport_ Config { prettyPrint = prettyPrint, findImportPos = findImportPos } sp
       applyChange srcLines NoImportChange = srcLines
 
       outputFile spec
-         | Just file <- spec ^. saveToFile = file
-         | otherwise                       = spec ^. sourceFile
+         | Just file <- saveToFile spec = file
+         | otherwise                    = sourceFile spec
 
       lastImportSrcLine fstLine srcLines
          | Just lastLine <- P.lastImportSrcLine $ drop (max 0 (fstLine - 1)) srcLines
@@ -90,4 +96,4 @@ hsimport_ Config { prettyPrint = prettyPrint, findImportPos = findImportPos } sp
          | otherwise
          = fstLine
 
-      allImportDecls = importDecls $ spec ^. parsedSrcFile
+      allImportDecls = importDecls $ parsedSrcFile spec

@@ -7,11 +7,7 @@ import System.FilePath
 import System.IO (hPutStrLn, stderr)
 import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
-import HsImport.Main (hsimport_)
-import HsImport.ImportSpec (hsImportSpec)
-import qualified HsImport.Config as C
-import qualified HsImport.Args as A
-import qualified HsImport.ImportPos as P
+import qualified HsImport as HI
 
 main = defaultMain tests
 
@@ -20,91 +16,91 @@ tests = testGroup "Tests" [moduleTests, symbolTests]
 
 moduleTests :: TestTree
 moduleTests = testGroup "Module Tests"
-   [ test "ModuleTest0" $ A.defaultArgs { A.moduleName = "Foo.Bar" }
-   , test "ModuleTest1" $ A.defaultArgs { A.moduleName = "Foo.Bar" }
-   , test "ModuleTest2" $ A.defaultArgs { A.moduleName = "Foo.Bar.Blub" }
-   , test "ModuleTest3" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest4" $ A.defaultArgs { A.moduleName = "Ugah.Argh2" }
-   , test "ModuleTest5" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest6" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest7" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest8" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest9" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest10" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest11" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest12" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest13" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest14" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest15" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest16" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest17" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest18" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest19" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest20" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest21" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest22" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test "ModuleTest23" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "CM" }
-   , test "ModuleTest24" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "CM" }
-   , test "ModuleTest25" $ A.defaultArgs { A.moduleName = "Control.Monad", A.qualifiedName = "Control.Monad" }
-   , test "ModuleTest26" $ A.defaultArgs { A.moduleName = "Control.Monad" }
-   , test_ "ModuleTest27" (C.defaultConfig { C.findImportPos = importPosBeforeFirst }) (A.defaultArgs { A.moduleName = "Control.Monad" })
-   , test_ "ModuleTest28" (C.defaultConfig { C.findImportPos = importPosAfterFirst }) (A.defaultArgs { A.moduleName = "Control.Monad" })
-   , test_ "ModuleTest29" (C.defaultConfig { C.findImportPos = importPosBeforeLast }) (A.defaultArgs { A.moduleName = "Control.Monad" })
-   , test_ "ModuleTest30" (C.defaultConfig { C.findImportPos = importPosAfterLast }) (A.defaultArgs { A.moduleName = "Control.Monad" })
+   [ test "ModuleTest0" $ HI.defaultArgs { HI.moduleName = "Foo.Bar" }
+   , test "ModuleTest1" $ HI.defaultArgs { HI.moduleName = "Foo.Bar" }
+   , test "ModuleTest2" $ HI.defaultArgs { HI.moduleName = "Foo.Bar.Blub" }
+   , test "ModuleTest3" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest4" $ HI.defaultArgs { HI.moduleName = "Ugah.Argh2" }
+   , test "ModuleTest5" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest6" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest7" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest8" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest9" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest10" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest11" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest12" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest13" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest14" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest15" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest16" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest17" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest18" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest19" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest20" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest21" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest22" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest23" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.qualifiedName = "CM" }
+   , test "ModuleTest24" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.qualifiedName = "CM" }
+   , test "ModuleTest25" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.qualifiedName = "Control.Monad" }
+   , test "ModuleTest26" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test_ "ModuleTest27" (HI.defaultConfig { HI.findImportPos = importPosBeforeFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , test_ "ModuleTest28" (HI.defaultConfig { HI.findImportPos = importPosAfterFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , test_ "ModuleTest29" (HI.defaultConfig { HI.findImportPos = importPosBeforeLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , test_ "ModuleTest30" (HI.defaultConfig { HI.findImportPos = importPosAfterLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
    ]
 
 
 symbolTests :: TestTree
 symbolTests = testGroup "Symbol Tests"
-   [ test "SymbolTest0" $ A.defaultArgs { A.moduleName = "Foo.Bar", A.symbolName = "foo" }
-   , test "SymbolTest1" $ A.defaultArgs { A.moduleName = "Foo.Bar", A.symbolName = "foo" }
-   , test "SymbolTest2" $ A.defaultArgs { A.moduleName = "Foo.Bar.Blub", A.symbolName = "foo" }
-   , test "SymbolTest3" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when" }
-   , test "SymbolTest4" $ A.defaultArgs { A.moduleName = "Ugah.Argh2", A.symbolName = "argh" }
-   , test "SymbolTest5" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when" }
-   , test "SymbolTest6" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
-   , test "SymbolTest7" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
-   , test "SymbolTest8" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
-   , test "SymbolTest9" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "unless" }
-   , test "SymbolTest10" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
-   , test "SymbolTest11" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
-   , test "SymbolTest12" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<$>" }
-   , test "SymbolTest13" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<*" }
-   , test "SymbolTest14" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "<*" }
-   , test "SymbolTest15" $ A.defaultArgs { A.moduleName = "Control.Applicative", A.symbolName = "*>" }
-   , test "SymbolTest16" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when", A.qualifiedName = "CM" }
-   , test "SymbolTest17" $ A.defaultArgs { A.moduleName = "Control.Monad", A.symbolName = "when", A.qualifiedName = "CM" }
-   , test "SymbolTest18" $ A.defaultArgs { A.moduleName = "Data.Text", A.symbolName = "Text" }
-   , test "SymbolTest19" $ A.defaultArgs { A.moduleName = "Data.List", A.symbolName = "foldl'" }
-   , test "SymbolTest20" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True }
-   , test "SymbolTest21" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True }
-   , test "SymbolTest22" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Just"] }
-   , test "SymbolTest23" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.all = True, A.with = ["Just"] }
-   , test "SymbolTest24" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Just"] }
-   , test "SymbolTest25" $ A.defaultArgs { A.moduleName = "Data.Maybe", A.symbolName = "Maybe", A.with = ["Nothing", "Just"] }
-   , test "SymbolTest26" $ A.defaultArgs { A.moduleName = "Foo", A.symbolName = "bar" }
-   , test "SymbolTest27" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "g" }
-   , test "SymbolTest28" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
-   , test_ "SymbolTest29" (C.defaultConfig { C.prettyPrint = prettyPrint }) (A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" })
-   , test_ "SymbolTest30" (C.defaultConfig { C.prettyPrint = prettyPrint }) (A.defaultArgs { A.moduleName = "X.Y", A.symbolName = "x" })
-   , test "SymbolTest31" $ A.defaultArgs { A.moduleName = "Ugah.Blub", A.symbolName = "d" }
-   , test "SymbolTest32" $ A.defaultArgs { A.moduleName = "Control.Foo", A.symbolName = "foo" }
+   [ test "SymbolTest0" $ HI.defaultArgs { HI.moduleName = "Foo.Bar", HI.symbolName = "foo" }
+   , test "SymbolTest1" $ HI.defaultArgs { HI.moduleName = "Foo.Bar", HI.symbolName = "foo" }
+   , test "SymbolTest2" $ HI.defaultArgs { HI.moduleName = "Foo.Bar.Blub", HI.symbolName = "foo" }
+   , test "SymbolTest3" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "when" }
+   , test "SymbolTest4" $ HI.defaultArgs { HI.moduleName = "Ugah.Argh2", HI.symbolName = "argh" }
+   , test "SymbolTest5" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "when" }
+   , test "SymbolTest6" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "unless" }
+   , test "SymbolTest7" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "unless" }
+   , test "SymbolTest8" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "unless" }
+   , test "SymbolTest9" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "unless" }
+   , test "SymbolTest10" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "<$>" }
+   , test "SymbolTest11" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "<$>" }
+   , test "SymbolTest12" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "<$>" }
+   , test "SymbolTest13" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "<*" }
+   , test "SymbolTest14" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "<*" }
+   , test "SymbolTest15" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "*>" }
+   , test "SymbolTest16" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "when", HI.qualifiedName = "CM" }
+   , test "SymbolTest17" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "when", HI.qualifiedName = "CM" }
+   , test "SymbolTest18" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text" }
+   , test "SymbolTest19" $ HI.defaultArgs { HI.moduleName = "Data.List", HI.symbolName = "foldl'" }
+   , test "SymbolTest20" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.all = True }
+   , test "SymbolTest21" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.all = True }
+   , test "SymbolTest22" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.with = ["Just"] }
+   , test "SymbolTest23" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.all = True, HI.with = ["Just"] }
+   , test "SymbolTest24" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.with = ["Just"] }
+   , test "SymbolTest25" $ HI.defaultArgs { HI.moduleName = "Data.Maybe", HI.symbolName = "Maybe", HI.with = ["Nothing", "Just"] }
+   , test "SymbolTest26" $ HI.defaultArgs { HI.moduleName = "Foo", HI.symbolName = "bar" }
+   , test "SymbolTest27" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "g" }
+   , test "SymbolTest28" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "d" }
+   , test_ "SymbolTest29" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
+   , test_ "SymbolTest30" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
+   , test "SymbolTest31" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "d" }
+   , test "SymbolTest32" $ HI.defaultArgs { HI.moduleName = "Control.Foo", HI.symbolName = "foo" }
    ]
 
 
-test :: String -> A.HsImportArgs -> TestTree
-test testName args = test_ testName C.defaultConfig args
+test :: String -> HI.HsImportArgs -> TestTree
+test testName args = test_ testName HI.defaultConfig args
 
 
-test_ :: String -> C.Config -> A.HsImportArgs -> TestTree
+test_ :: String -> HI.Config -> HI.HsImportArgs -> TestTree
 test_ testName config args =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
-         spec <- hsImportSpec (args { A.inputSrcFile = inputFile, A.outputSrcFile = outputFile })
-         case spec of
-              Left error  -> hPutStrLn stderr ("hsimport: " ++ error)
-              Right spec_ -> hsimport_ config spec_
+         maybeErr <- HI.hsimportWithArgs config (args { HI.inputSrcFile = inputFile, HI.outputSrcFile = outputFile })
+         case maybeErr of
+              Just err -> hPutStrLn stderr ("hsimport: " ++ err)
+              _        -> return ()
 
       diff ref new = ["diff", "-u", ref, new]
 
@@ -126,21 +122,21 @@ prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSp
 prettyPrint _ = "Uupps"
 
 
-importPosAfterLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosAfterLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
 importPosAfterLast _ []      = Nothing
-importPosAfterLast _ imports = Just . P.After . last $ imports
+importPosAfterLast _ imports = Just . HI.After . last $ imports
 
 
-importPosBeforeLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosBeforeLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeLast _ []      = Nothing
-importPosBeforeLast _ imports = Just . P.Before . last $ imports
+importPosBeforeLast _ imports = Just . HI.Before . last $ imports
 
 
-importPosAfterFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosAfterFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
 importPosAfterFirst _ []      = Nothing
-importPosAfterFirst _ imports = Just . P.After . head $ imports
+importPosAfterFirst _ imports = Just . HI.After . head $ imports
 
 
-importPosBeforeFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe P.ImportPos
+importPosBeforeFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeFirst _ []      = Nothing
-importPosBeforeFirst _ imports = Just . P.Before . head $ imports
+importPosBeforeFirst _ imports = Just . HI.Before . head $ imports

@@ -20,18 +20,20 @@ data HsImportArgs = HsImportArgs
    , all           :: Bool
    , with          :: [String]
    , qualifiedName :: String
+   , as            :: String
    , inputSrcFile  :: FilePath
    , outputSrcFile :: FilePath
    } deriving (Data, Typeable, Show, Eq)
 
 
 hsImportArgs :: IO HsImportArgs
-hsImportArgs = cmdArgs $ HsImportArgs 
+hsImportArgs = cmdArgs $ HsImportArgs
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
    , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
    , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
    , qualifiedName = def &= help "The name to use for a qualified module import"
+   , as            = def &= help "The name to use for an unqualified module import" &= name "as"
    , outputSrcFile = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile
    , inputSrcFile  = def &= args &= typ "SOURCEFILE"
    }
@@ -51,6 +53,7 @@ defaultArgs = HsImportArgs
    , all           = def
    , with          = def
    , qualifiedName = def
+   , as            = def
    , inputSrcFile  = def
    , outputSrcFile = def
    }

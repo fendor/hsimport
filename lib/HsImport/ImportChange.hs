@@ -11,6 +11,7 @@ import Control.Lens
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
 import HsImport.Symbol (Symbol(..))
+import HsImport.Module (Module(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
 
@@ -25,20 +26,20 @@ data ImportChange = ReplaceImportAt SrcLine HS.ImportDecl -- ^ replace the impor
                   deriving (Show)
 
 
-importChanges :: String -> Maybe Symbol -> Maybe String -> HS.Module -> [ImportChange]
-importChanges moduleName (Just symbol) (Just qualifiedName) module_ =
-   [ importModuleWithSymbol moduleName symbol module_
-   , importQualifiedModule moduleName qualifiedName module_
+importChanges :: Module -> Maybe Symbol -> HS.Module -> [ImportChange]
+importChanges (Module moduleName False Nothing) Nothing hsModule =
+   [ importModule moduleName hsModule ]
+
+importChanges (Module moduleName False Nothing) (Just symbol) hsModule =
+   [ importModuleWithSymbol moduleName symbol hsModule ]
+
+importChanges (Module moduleName qualified as) symbol hsModule =
+   [ maybe NoImportChange (\sym -> importModuleWithSymbol moduleName sym hsModule) symbol
+
+   , if qualified
+        then importQualifiedModule moduleName (maybe moduleName id as) hsModule
+        else maybe NoImportChange (\asName -> importModuleAs moduleName asName hsModule) as
    ]
-
-importChanges moduleName (Just symbol) Nothing module_ =
-   [ importModuleWithSymbol moduleName symbol module_ ]
-
-importChanges moduleName Nothing (Just qualifiedName) module_ =
-   [ importQualifiedModule moduleName qualifiedName module_ ]
-
-importChanges moduleName Nothing Nothing module_ =
-   [ importModule moduleName module_ ]
 
 
 importModule :: String -> HS.Module -> ImportChange
@@ -97,6 +98,22 @@ importQualifiedModule moduleName qualifiedName module_
            Nothing      -> AddImportAtEnd (qualifiedImportDecl moduleName qualifiedName)
 
 
+importModuleAs :: String -> String -> HS.Module -> ImportChange
+importModuleAs moduleName asName module_
+   | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
+      if any (hasAsImport asName) matching
+         then NoImportChange
+         else FindImportPos $ asImportDecl moduleName asName
+
+   | not $ null (importDecls module_) =
+      FindImportPos $ asImportDecl moduleName asName
+
+   | otherwise =
+      case srcLineForNewImport module_ of
+           Just srcLine -> AddImportAfter srcLine (asImportDecl moduleName asName)
+           Nothing      -> AddImportAtEnd (asImportDecl moduleName asName)
+
+
 entireModuleImported :: HS.ImportDecl -> Bool
 entireModuleImported import_ =
    not (HS.importQualified import_) && isNothing (HS.importSpecs import_)
@@ -110,6 +127,17 @@ hasQualifiedImport qualifiedName import_
    = True
 
    | otherwise = False
+
+
+hasAsImport :: String -> HS.ImportDecl -> Bool
+hasAsImport asName import_
+   | not $ HS.importQualified import_
+   , Just (HS.ModuleName importAs) <- HS.importAs import_
+   , importAs == asName
+   = True
+
+   | otherwise
+   = False
 
 
 symbolImported :: Symbol -> HS.ImportDecl -> Bool
@@ -168,6 +196,13 @@ qualifiedImportDecl moduleName qualifiedName =
                            , HS.importAs        = if moduleName /= qualifiedName
                                                      then Just $ HS.ModuleName qualifiedName
                                                      else Nothing
+                           }
+
+
+asImportDecl :: String -> String -> HS.ImportDecl
+asImportDecl moduleName asName =
+   (importDecl moduleName) { HS.importQualified = False
+                           , HS.importAs        = Just $ HS.ModuleName asName
                            }
 
 
