@@ -1,3 +1,7 @@
+0.6.1
+-----
+* Changes for haskell-src-exts 1.16.0
+
 0.6
 ---
 * Add option '--as'
