@@ -1,3 +1,7 @@
+0.6.2
+-----
+* Fixing build failure of tasty 0.8.1.3
+
 0.6.1
 -----
 * Changes for haskell-src-exts 1.16.0
