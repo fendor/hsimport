@@ -1,11 +1,10 @@
-{-# Language PatternGuards #-}
+{-# Language PatternGuards, CPP #-}
 
 module HsImport.Main
    ( hsimport
    , hsimportWithArgs
    ) where
 
-import Control.Applicative ((<$>))
 import Control.Monad (when)
 import System.Exit (exitFailure, exitSuccess)
 import System.IO (hPutStrLn, stderr)
@@ -21,6 +20,10 @@ import qualified HsImport.Args as Args
 import HsImport.Config
 import HsImport.Utils
 import qualified HsImport.Parse as P
+
+#if __GLASGOW_HASKELL__ < 710
+import Control.Applicative ((<$>))
+#endif
 
 
 hsimport :: Config -> IO ()

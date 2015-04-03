@@ -1,10 +1,14 @@
+{-# Language CPP #-}
 
 module HsImport.PrettyPrint
    ( prettyPrint
    ) where
 
-import Data.Monoid (mconcat)
 import qualified Language.Haskell.Exts as HS
+
+#if __GLASGOW_HASKELL__ < 710
+import Data.Monoid (mconcat)
+#endif
 
 
 prettyPrint :: HS.ImportDecl -> String

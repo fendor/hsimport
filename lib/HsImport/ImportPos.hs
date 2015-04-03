@@ -1,3 +1,4 @@
+{-# Language CPP #-}
 
 module HsImport.ImportPos
    ( findImportPos
@@ -9,7 +10,10 @@ module HsImport.ImportPos
 import qualified Language.Haskell.Exts as HS
 import Data.List.Split (splitOn)
 import Control.Lens
+
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
+#endif
 
 type ModuleName = String
 

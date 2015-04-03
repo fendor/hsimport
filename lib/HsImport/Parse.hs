@@ -1,4 +1,4 @@
-{-# Language ScopedTypeVariables, PatternGuards #-}
+{-# Language ScopedTypeVariables, PatternGuards, CPP #-}
 
 module HsImport.Parse
    ( parseFile
@@ -10,8 +10,11 @@ import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
 import Data.List (isPrefixOf)
 import qualified Language.Haskell.Exts as HS
-import Control.Applicative ((<$>))
 import Control.Exception (catch, SomeException)
+
+#if __GLASGOW_HASKELL__ < 710
+import Control.Applicative ((<$>))
+#endif
 
 type Error = String
 
