@@ -26,12 +26,12 @@ parseFile file = do
                   HS.ParseOk _ -> return $ Right result
 
                   HS.ParseFailed srcLoc _ -> do
-                     srcResult <- parseInvalidSource (lines srcFile) (HS.srcLine srcLoc) 0 (HS.srcLine srcLoc)
+                     srcResult <- parseInvalidSource (lines srcFile) (HS.srcLine srcLoc)
                      return $ Right $ fromMaybe result srcResult)
 
          (\(e :: SomeException) -> do
             let srcLines = lines srcFile
-            srcResult <- parseInvalidSource srcLines (length srcLines) 0 (length srcLines)
+            srcResult <- parseInvalidSource srcLines (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
    where
       -- | replace CPP directives by a fake comment
@@ -96,27 +96,45 @@ lastImportSrcLine srcLines
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
-parseInvalidSource :: [String] -> Int -> Int -> Int -> IO (Maybe (HS.ParseResult HS.Module))
-parseInvalidSource srcLines firstInvalidLine lastValidLine currLastLine
-   | null srcLines || lastValidLine >= currLastLine = return Nothing
-   | otherwise =
-      catch (case parseFileContents source of
-                  result@(HS.ParseOk _)
-                     | (nextLine + 1) == currLastLine ->
-                        return $ Just result
-                     | otherwise                      ->
-                        parseInvalidSource srcLines firstInvalidLine nextLine currLastLine
-
-                  HS.ParseFailed srcLoc _
-                     | HS.srcLine srcLoc == firstInvalidLine ->
-                        parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine
-                     | otherwise                             ->
-                        parseInvalidSource srcLines firstInvalidLine nextLine currLastLine)
-
-            (\(_ :: SomeException) -> parseInvalidSource srcLines firstInvalidLine lastValidLine nextLine)
+parseInvalidSource :: [String] -> Int -> IO (Maybe (HS.ParseResult HS.Module))
+parseInvalidSource srcLines firstInvalidLine = do
+   parseInvalidSource' 1 firstInvalidLine Nothing 0
    where
-      source   = unlines $ take (nextLine + 1) srcLines
-      nextLine = lastValidLine + (floor ((realToFrac (currLastLine - lastValidLine) / 2) :: Double) :: Int)
+      parseInvalidSource' :: Int -> Int -> Maybe (Int, HS.ParseResult HS.Module) -> Int -> IO (Maybe (HS.ParseResult HS.Module))
+      parseInvalidSource' lastValidLine currLastLine maxParseOk iteration
+         | null srcLines || lastValidLine >= currLastLine
+         = return Nothing
+
+         | iteration >= 10
+         = return (snd <$> maxParseOk)
+
+         | otherwise = do
+            catch (case parseFileContents source of
+                        result@(HS.ParseOk _)
+                           | nextLine == currLastLine ->
+                              return $ Just result
+                           | otherwise                ->
+                              parseInvalidSource' nextLine currLastLine (maxParseOk' result) iteration'
+
+                        HS.ParseFailed srcLoc _
+                           | HS.srcLine srcLoc == firstInvalidLine ->
+                              parseInvalidSource' lastValidLine nextLine maxParseOk iteration'
+                           | otherwise                             ->
+                              parseInvalidSource' nextLine currLastLine maxParseOk iteration')
+
+                  (\(_ :: SomeException) -> parseInvalidSource' lastValidLine nextLine maxParseOk iteration')
+         where
+            source      = unlines $ take nextLine srcLines
+            nextLine    = lastValidLine + (floor ((realToFrac (currLastLine - lastValidLine) / 2) :: Double) :: Int)
+            iteration'  = iteration + 1
+
+            maxParseOk' nextResult =
+               case maxParseOk of
+                    Just (maxLine, _)
+                       | nextLine > maxLine -> Just (nextLine, nextResult)
+                       | otherwise          -> maxParseOk
+
+                    _ -> Just (nextLine, nextResult)
 
 
 parseFileContents :: String -> HS.ParseResult HS.Module
