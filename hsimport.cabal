@@ -1,5 +1,5 @@
 name: hsimport
-version: 0.6.6
+version: 0.6.7
 cabal-version: >=1.9.2
 build-type: Simple
 license: BSD3
@@ -10,7 +10,7 @@ description:
     A command line program for extending the import list of a Haskell source file.
 category: Utils, Development
 author: Daniel Trstenjak
-tested-with: GHC ==7.6.2 GHC ==7.6.3 GHC ==7.8.3 GHC ==7.10.1
+tested-with: GHC ==7.6.2 GHC ==7.6.3 GHC ==7.8.3 GHC ==7.10.1 GHC ==7.10.2
 extra-source-files:
     README.md
     CHANGELOG

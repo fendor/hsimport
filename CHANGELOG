@@ -1,3 +1,7 @@
+0.6.7
+-----
+* More robust handling of invalid Haskell source code
+
 0.6.6
 -----
 * Raise upper bounds of dependencies
