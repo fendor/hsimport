@@ -1,3 +1,7 @@
+0.7
+---
+* Changes for haskell-src-exts 1.17.0
+
 0.6.7
 -----
 * More robust handling of invalid Haskell source code
