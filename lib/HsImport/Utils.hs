@@ -32,10 +32,12 @@ declSrcLoc decl =
         HS.DefaultDecl srcLoc _             -> Just srcLoc
         HS.SpliceDecl srcLoc _              -> Just srcLoc
         HS.TypeSig srcLoc _ _               -> Just srcLoc
+        HS.PatSynSig srcLoc _ _ _ _ _       -> Just srcLoc
         HS.FunBind _                        -> Nothing
         HS.PatBind srcLoc _ _ _             -> Just srcLoc
         HS.ForImp srcLoc _ _ _ _ _          -> Just srcLoc
         HS.ForExp srcLoc _ _ _ _            -> Just srcLoc
+        HS.PatSyn srcLoc _ _ _              -> Just srcLoc
         HS.RulePragmaDecl srcLoc _          -> Just srcLoc
         HS.DeprPragmaDecl srcLoc _          -> Just srcLoc
         HS.WarnPragmaDecl srcLoc _          -> Just srcLoc
@@ -46,6 +48,7 @@ declSrcLoc decl =
         HS.InstSig srcLoc _ _ _ _           -> Just srcLoc
         HS.AnnPragma srcLoc _               -> Just srcLoc
         HS.MinimalPragma srcLoc _           -> Just srcLoc
+        HS.RoleAnnotDecl srcLoc _ _         -> Just srcLoc
 
 
 importDecls :: HS.Module -> [HS.ImportDecl]

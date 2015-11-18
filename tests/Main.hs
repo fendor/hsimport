@@ -117,7 +117,7 @@ prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSp
       ppSyms = intercalate " , " symNames
       symNames = map symName syms
 
-      symName (HS.IVar HS.NoNamespace (HS.Ident name)) = name
+      symName (HS.IVar (HS.Ident name)) = name
       symName _ = ""
 
 prettyPrint _ = "Uupps"

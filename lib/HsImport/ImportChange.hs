@@ -149,8 +149,8 @@ symbolImported symbol import_
    | otherwise
    = False
    where
-      imports (Symbol symName)             (HS.IVar _ name)                  = symName == nameString name
-      imports (Symbol symName)             (HS.IAbs name)                    = symName == nameString name
+      imports (Symbol symName)             (HS.IVar name)                    = symName == nameString name
+      imports (Symbol symName)             (HS.IAbs _ name)                  = symName == nameString name
       imports (Symbol symName)             (HS.IThingAll name)               = symName == nameString name
       imports (Symbol symName)             (HS.IThingWith name _)            = symName == nameString name
       imports (AllOfSymbol symName)        (HS.IThingAll name)               = symName == nameString name
@@ -208,7 +208,7 @@ asImportDecl moduleName asName =
 
 
 importSpec :: Symbol -> HS.ImportSpec
-importSpec (Symbol symName)             = HS.IVar HS.NoNamespace (hsName symName)
+importSpec (Symbol symName)             = HS.IVar $ hsName symName
 importSpec (AllOfSymbol symName)        = HS.IThingAll $ hsName symName
 importSpec (SomeOfSymbol symName names) = HS.IThingWith (hsName symName) (map (HS.VarName . hsName) names)
 
