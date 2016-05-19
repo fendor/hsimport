@@ -8,8 +8,8 @@ module HsImport.ImportPos
    ) where
 
 import qualified Language.Haskell.Exts as HS
+import Data.List.Index (ifoldl')
 import Data.List.Split (splitOn)
-import Control.Lens
 
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
@@ -50,8 +50,8 @@ bestMatchingImport moduleName imports =
         Just (idx, _) -> Just $ imports !! idx
         _             -> Nothing
    where
-      computeMatches :: Int -> Maybe (Int, Int) -> [String] -> Maybe (Int, Int)
-      computeMatches idx matches mod =
+      computeMatches :: Maybe (Int, Int) -> Int -> [String] -> Maybe (Int, Int)
+      computeMatches matches idx mod =
          let num' = numMatches splittedMod mod
              in case matches of
                      Just (_, num) | num' >= num -> Just (idx, num')
