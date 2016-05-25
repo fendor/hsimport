@@ -7,7 +7,7 @@ module HsImport.ImportChange
 
 import Data.Maybe
 import Data.List (find, (\\))
-import Control.Lens
+import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
 import HsImport.Symbol (Symbol(..))
