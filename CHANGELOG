@@ -1,3 +1,7 @@
+0.7.1
+-----
+* Switch from lens to microlens (for faster compiling)
+
 0.7
 ---
 * Changes for haskell-src-exts 1.17.0
