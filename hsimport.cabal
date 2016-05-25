@@ -62,7 +62,7 @@ executable hsimport
         hsimport -any
     cpp-options: -DCABAL
     hs-source-dirs: exe
-    ghc-prof-options: -prof -fprof-auto -rtsopts
+    ghc-prof-options: -fprof-auto -rtsopts
     ghc-options: -W
 
 test-suite hsimport-tests
