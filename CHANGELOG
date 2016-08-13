@@ -1,3 +1,8 @@
+0.8.0
+-----
+* Changes for haskell-src-exts 1.18.0
+* Support GHC 8.0.1
+
 0.7.1
 -----
 * Switch from lens to microlens (for faster compiling)
