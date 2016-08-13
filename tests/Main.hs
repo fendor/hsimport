@@ -9,6 +9,8 @@ import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
 
+type ImportDecl = HS.ImportDecl HS.SrcSpanInfo
+
 main = defaultMain tests
 
 tests :: TestTree
@@ -110,34 +112,34 @@ test_ testName config args =
       inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
 
 
-prettyPrint :: HS.ImportDecl -> String
-prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName modName, HS.importSpecs = Just (False, syms) } =
+prettyPrint :: ImportDecl -> String
+prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName _ modName, HS.importSpecs = Just (HS.ImportSpecList _ False syms) } =
    "import " ++ modName ++ " ( " ++ ppSyms ++ " )"
    where
       ppSyms = intercalate " , " symNames
       symNames = map symName syms
 
-      symName (HS.IVar (HS.Ident name)) = name
+      symName (HS.IVar _ (HS.Ident _ name)) = name
       symName _ = ""
 
 prettyPrint _ = "Uupps"
 
 
-importPosAfterLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
+importPosAfterLast :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
 importPosAfterLast _ []      = Nothing
 importPosAfterLast _ imports = Just . HI.After . last $ imports
 
 
-importPosBeforeLast :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
+importPosBeforeLast :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeLast _ []      = Nothing
 importPosBeforeLast _ imports = Just . HI.Before . last $ imports
 
 
-importPosAfterFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
+importPosAfterFirst :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
 importPosAfterFirst _ []      = Nothing
 importPosAfterFirst _ imports = Just . HI.After . head $ imports
 
 
-importPosBeforeFirst :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe HI.ImportPos
+importPosBeforeFirst :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeFirst _ []      = Nothing
 importPosBeforeFirst _ imports = Just . HI.Before . head $ imports

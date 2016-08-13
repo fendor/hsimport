@@ -82,9 +82,12 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       applyChange srcLines (FindImportPos importDecl) =
          case findImportPos importDecl allImportDecls of
-              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (srcLine impDecl) importDecl)
-              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 (srcLine impDecl - 1)) importDecl)
-              _                     -> applyChange srcLines (AddImportAfter (srcLine . last $ allImportDecls) importDecl)
+              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (importDeclSrcLine impDecl)
+                                                                            importDecl)
+              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 (importDeclSrcLine impDecl - 1))
+                                                                            importDecl)
+              _                     -> applyChange srcLines (AddImportAfter (importDeclSrcLine . last $ allImportDecls)
+                                                                            importDecl)
 
       applyChange srcLines NoImportChange = srcLines
 

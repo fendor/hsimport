@@ -11,7 +11,7 @@ import Data.Monoid (mconcat)
 #endif
 
 
-prettyPrint :: HS.ImportDecl -> String
+prettyPrint :: HS.ImportDecl HS.SrcSpanInfo -> String
 prettyPrint importDecl =
    -- remove newlines from pretty printed ImportDecl
    case lines $ HS.prettyPrint importDecl of

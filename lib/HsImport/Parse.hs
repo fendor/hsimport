@@ -16,9 +16,10 @@ import Control.Exception (catch, SomeException)
 import Control.Applicative ((<$>))
 #endif
 
-type Error = String
+type Error         = String
+type HsParseResult = HS.ParseResult (HS.Module HS.SrcSpanInfo)
 
-parseFile :: FilePath -> IO (Either Error (HS.ParseResult HS.Module))
+parseFile :: FilePath -> IO (Either Error HsParseResult)
 parseFile file = do
    srcFile <- unlines. replaceCPPByComment . lines . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile
@@ -80,8 +81,8 @@ lastImportSrcLine srcLines
 
       -- | Returns True if the module contains one ImportDecl without any explicitely
       --   listed symbols.
-      oneImportDeclWithoutSymbols (HS.Module _ _ _ _ _ [HS.ImportDecl {HS.importSpecs = Nothing}] _) = True
-      oneImportDeclWithoutSymbols _                                                                  = False
+      oneImportDeclWithoutSymbols (HS.Module _ _ _ [HS.ImportDecl {HS.importSpecs = Nothing}] _) = True
+      oneImportDeclWithoutSymbols _                                                              = False
 
       -- | Returns True if the line represents the starting of a ImportDecl symbol list.
       startsWithImportDeclSymbols lineNum
@@ -96,11 +97,11 @@ lastImportSrcLine srcLines
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
-parseInvalidSource :: [String] -> Int -> IO (Maybe (HS.ParseResult HS.Module))
+parseInvalidSource :: [String] -> Int -> IO (Maybe HsParseResult)
 parseInvalidSource srcLines firstInvalidLine = do
    parseInvalidSource' 1 firstInvalidLine Nothing 0
    where
-      parseInvalidSource' :: Int -> Int -> Maybe (Int, HS.ParseResult HS.Module) -> Int -> IO (Maybe (HS.ParseResult HS.Module))
+      parseInvalidSource' :: Int -> Int -> Maybe (Int, HsParseResult) -> Int -> IO (Maybe HsParseResult)
       parseInvalidSource' lastValidLine currLastLine maxParseOk iteration
          | null srcLines || lastValidLine >= currLastLine
          = return Nothing
@@ -137,7 +138,7 @@ parseInvalidSource srcLines firstInvalidLine = do
                     _ -> Just (nextLine, nextResult)
 
 
-parseFileContents :: String -> HS.ParseResult HS.Module
+parseFileContents :: String -> HsParseResult
 parseFileContents = HS.parseFileContentsWithMode parseMode
    where
       parseMode = HS.defaultParseMode { HS.fixities = Just [] }

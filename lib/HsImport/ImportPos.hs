@@ -15,27 +15,28 @@ import Data.List.Split (splitOn)
 import Control.Applicative ((<$>))
 #endif
 
-type ModuleName = String
+type ModuleName   = String
+type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
 
 -- | Where a new import declaration should be added.
-data ImportPos = Before HS.ImportDecl -- ^ before the specified import declaration
-               | After  HS.ImportDecl -- ^ after the specified import declaration
+data ImportPos = Before HsImportDecl -- ^ before the specified import declaration
+               | After  HsImportDecl -- ^ after the specified import declaration
                deriving (Show, Eq)
 
 
 -- | Returns the position where the import declaration for the
 --   new import should be put into the list of import declarations.
-findImportPos :: HS.ImportDecl -> [HS.ImportDecl] -> Maybe ImportPos
+findImportPos :: HsImportDecl -> [HsImportDecl] -> Maybe ImportPos
 findImportPos newImport imports = After <$> bestMatchingImport name imports
    where
-      HS.ModuleName name = HS.importModule newImport
+      HS.ModuleName _ name = HS.importModule newImport
 
 
 -- | Returns all import declarations having the same module name.
-matchingImports :: ModuleName -> [HS.ImportDecl] -> [HS.ImportDecl]
+matchingImports :: ModuleName -> [HsImportDecl] -> [HsImportDecl]
 matchingImports moduleName imports =
    [ i
-   | i@HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
+   | i@HS.ImportDecl {HS.importModule = HS.ModuleName _ name} <- imports
    , moduleName == name
    ]
 
@@ -43,7 +44,7 @@ matchingImports moduleName imports =
 -- | Returns the best matching import declaration for the given module name.
 --   E.g. if the module name is "Foo.Bar.Boo", then "Foo.Bar" is considered
 --   better matching than "Foo".
-bestMatchingImport :: ModuleName -> [HS.ImportDecl] -> Maybe HS.ImportDecl
+bestMatchingImport :: ModuleName -> [HsImportDecl] -> Maybe HsImportDecl
 bestMatchingImport _          []      = Nothing
 bestMatchingImport moduleName imports =
    case ifoldl' computeMatches Nothing splittedMods of
@@ -71,5 +72,5 @@ bestMatchingImport moduleName imports =
 
       splittedMod  = splitOn "." moduleName
       splittedMods = [ splitOn "." name
-                     | HS.ImportDecl {HS.importModule = HS.ModuleName name} <- imports
+                     | HS.ImportDecl {HS.importModule = HS.ModuleName _ name} <- imports
                      ]

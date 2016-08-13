@@ -15,7 +15,7 @@ import Data.List (find)
 
 data ImportSpec = ImportSpec
    { sourceFile     :: FilePath
-   , parsedSrcFile  :: HS.Module
+   , parsedSrcFile  :: HS.Module HS.SrcSpanInfo
    , moduleToImport :: Module
    , symbolToImport :: Maybe Symbol
    , saveToFile     :: Maybe FilePath
