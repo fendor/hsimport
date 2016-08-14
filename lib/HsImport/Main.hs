@@ -13,13 +13,13 @@ import Data.List (foldl')
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Config.Dyre as Dyre
+import qualified Language.Haskell.Exts as HS
 import HsImport.ImportChange
 import HsImport.ImportSpec
 import HsImport.ImportPos (ImportPos(..))
 import qualified HsImport.Args as Args
 import HsImport.Config
 import HsImport.Utils
-import qualified HsImport.Parse as P
 
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
@@ -67,13 +67,13 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
    where
       applyChanges = foldl' applyChange
 
-      applyChange srcLines (ReplaceImportAt srcLine importDecl) =
-         let numTakes = max 0 (srcLine - 1)
-             numDrops = lastImportSrcLine srcLine srcLines
+      applyChange srcLines (ReplaceImportAt srcSpan importDecl) =
+         let numTakes = max 0 (HS.srcSpanStartLine srcSpan - 1)
+             numDrops = HS.srcSpanEndLine srcSpan
              in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
       applyChange srcLines (AddImportAfter srcLine importDecl) =
-         let numTakes = lastImportSrcLine srcLine srcLines
+         let numTakes = srcLine
              numDrops = numTakes
              in take numTakes srcLines ++ [prettyPrint importDecl] ++ drop numDrops srcLines
 
@@ -82,11 +82,11 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       applyChange srcLines (FindImportPos importDecl) =
          case findImportPos importDecl allImportDecls of
-              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (importDeclSrcLine impDecl)
+              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (lastSrcLine impDecl)
                                                                             importDecl)
-              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 (importDeclSrcLine impDecl - 1))
+              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 (firstSrcLine impDecl - 1))
                                                                             importDecl)
-              _                     -> applyChange srcLines (AddImportAfter (importDeclSrcLine . last $ allImportDecls)
+              _                     -> applyChange srcLines (AddImportAfter (lastSrcLine . last $ allImportDecls)
                                                                             importDecl)
 
       applyChange srcLines NoImportChange = srcLines
@@ -94,12 +94,5 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
       outputFile spec
          | Just file <- saveToFile spec = file
          | otherwise                    = sourceFile spec
-
-      lastImportSrcLine fstLine srcLines
-         | Just lastLine <- P.lastImportSrcLine $ drop (max 0 (fstLine - 1)) srcLines
-         = fstLine + (lastLine - 1)
-
-         | otherwise
-         = fstLine
 
       allImportDecls = importDecls $ parsedSrcFile spec

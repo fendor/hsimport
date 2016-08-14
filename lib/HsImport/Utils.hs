@@ -1,21 +1,28 @@
 
 module HsImport.Utils
-   ( importDeclSrcLine
-   , spanSrcLine
+   ( firstSrcLine
+   , lastSrcLine
+   , srcSpan
    , declSrcLoc
    , importDecls
    ) where
 
 import qualified Language.Haskell.Exts as HS
 
-type SrcLine = Int
+type SrcLine      = Int
+type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
+type HsModule     = HS.Module HS.SrcSpanInfo
 
-importDeclSrcLine :: HS.ImportDecl HS.SrcSpanInfo -> SrcLine
-importDeclSrcLine = spanSrcLine . HS.importAnn
+firstSrcLine :: HsImportDecl -> SrcLine
+firstSrcLine = HS.startLine . HS.importAnn
 
 
-spanSrcLine :: HS.SrcSpanInfo -> SrcLine
-spanSrcLine = HS.srcSpanStartLine . HS.srcInfoSpan
+srcSpan :: HsImportDecl -> HS.SrcSpan
+srcSpan = HS.srcInfoSpan . HS.importAnn
+
+
+lastSrcLine :: HsImportDecl -> SrcLine
+lastSrcLine = HS.srcSpanEndLine . srcSpan
 
 
 declSrcLoc :: HS.Decl HS.SrcSpanInfo -> HS.SrcLoc
@@ -27,7 +34,7 @@ declSrcLoc decl = HS.SrcLoc srcFile srcLine srcCol
       srcCol  = HS.srcSpanStartColumn srcSpan
 
 
-importDecls :: HS.Module HS.SrcSpanInfo -> [HS.ImportDecl HS.SrcSpanInfo]
+importDecls :: HsModule -> [HsImportDecl]
 importDecls (HS.Module _ _ _ imports _)            = imports
 importDecls (HS.XmlPage _ _ _ _ _ _ _)             = []
 importDecls (HS.XmlHybrid _ _ _ imports _ _ _ _ _) = imports

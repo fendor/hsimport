@@ -20,12 +20,13 @@ type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
 type HsModule     = HS.Module HS.SrcSpanInfo
 
 -- | How the import declarations should be changed
-data ImportChange = ReplaceImportAt SrcLine HsImportDecl -- ^ replace the import declaration at SrcLine
-                  | AddImportAfter SrcLine HsImportDecl  -- ^ add import declaration after SrcLine
-                  | AddImportAtEnd HsImportDecl          -- ^ add import declaration at end of source file
-                  | FindImportPos HsImportDecl           -- ^ search for an insert position for the import declaration
-                  | NoImportChange                       -- ^ no changes of the import declarations
-                  deriving (Show)
+data ImportChange
+   = ReplaceImportAt HS.SrcSpan HsImportDecl -- ^ replace the import declaration at SrcSpan
+   | AddImportAfter SrcLine HsImportDecl     -- ^ add import declaration after SrcLine
+   | AddImportAtEnd HsImportDecl             -- ^ add import declaration at end of source file
+   | FindImportPos HsImportDecl              -- ^ search for an insert position for the import declaration
+   | NoImportChange                          -- ^ no changes of the import declarations
+   deriving (Show)
 
 
 importChanges :: Module -> Maybe Symbol -> HsModule -> [ImportChange]
@@ -67,7 +68,7 @@ importModuleWithSymbol moduleName symbol module_
          then NoImportChange
          else case find hasImportedSymbols matching of
                    Just impDecl ->
-                      ReplaceImportAt (importDeclSrcLine impDecl) (addSymbol impDecl symbol)
+                      ReplaceImportAt (srcSpan impDecl) (addSymbol impDecl symbol)
 
                    Nothing      ->
                       FindImportPos $ importDeclWithSymbol moduleName symbol
@@ -242,11 +243,11 @@ srcLineForNewImport module_ =
    where
       newSrcLine srcSpan imports decls
          | not $ null imports
-         = Just (importDeclSrcLine $ last imports)
+         = Just (firstSrcLine $ last imports)
 
          | (decl:_) <- decls
          , sLoc <- declSrcLoc decl
-         , HS.srcLine sLoc >= spanSrcLine srcSpan
+         , HS.srcLine sLoc >= HS.startLine srcSpan
          = Just $ max 0 (HS.srcLine sLoc - 1)
 
          | otherwise
