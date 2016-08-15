@@ -1,3 +1,7 @@
+0.8.2
+-----
+* Update README
+
 0.8.1
 -----
 * Use SrcSpan info of haskell-src-exts instead of parsing import declarations by hand
