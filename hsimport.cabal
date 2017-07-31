@@ -1,5 +1,5 @@
 name: hsimport
-version: 0.8.3
+version: 0.8.4
 cabal-version: >=1.9.2
 build-type: Simple
 license: BSD3
@@ -11,7 +11,7 @@ description:
 category: Utils, Development
 author: Daniel Trstenjak
 tested-with: GHC ==7.6.2 GHC ==7.6.3 GHC ==7.8.3 GHC ==7.10.1
-             GHC ==7.10.2 GHC ==8.0.1
+             GHC ==7.10.2 GHC ==8.0.1 GHC ==8.2.1
 extra-source-files:
     README.md
     CHANGELOG
@@ -33,8 +33,8 @@ library
     build-depends:
         base >=3 && <5,
         cmdargs >=0.10.5 && <0.11,
-        haskell-src-exts >=1.18.0 && <1.19,
-        ilist >=0.1 && <0.3,
+        haskell-src-exts >=1.18.0 && <1.20,
+        ilist >=0.1 && <0.4,
         microlens ==0.4.*,
         mtl >=2.1.2 && <2.3,
         text >=0.11.3.1 && <1.3,
@@ -73,7 +73,7 @@ test-suite hsimport-tests
         tasty >=0.9.0.1 && <0.12,
         tasty-golden >=2.2.0.1 && <2.4,
         filepath >=1.3.0.1 && <1.5,
-        haskell-src-exts >=1.18.0 && <1.19,
+        haskell-src-exts >=1.18.0 && <1.20,
         hsimport -any
     hs-source-dirs: tests
     ghc-options: -W
