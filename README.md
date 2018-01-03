@@ -17,7 +17,7 @@ Installation
 Examples
 --------
 
-    $> hsimport -m 'Control.Monad' SomeSource.hs`
+    $> hsimport -m 'Control.Monad' SomeSource.hs
     => import Control.Monad
 
     $> hsimport -m 'Control.Monad' -s 'when' SomeSource.hs
