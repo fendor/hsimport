@@ -44,8 +44,11 @@ Examples
 Configuration
 -------------
 
-You can configure how the import declarations are pretty printed and where they're placed
-by writing a configuration file like:
+The easiest way to configure `hsimport` is by creating a `cabal` project.
+An example for this is [here](<https://github.com/dan-t/hsimport-config>).
+
+
+The other way - which most likely isn't worth the hassle - is by writting a `~/.config/hsimport/hsimport.hs` file:
 
     -- ~/.config/hsimport/hsimport.hs
     import qualified Language.Haskell.Exts as HS
