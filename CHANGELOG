@@ -1,3 +1,7 @@
+0.8.8
+-----
+* Update README
+
 0.8.7
 -----
 * Raise upper bound of 'haskell-src-exts'
