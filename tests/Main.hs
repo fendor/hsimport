@@ -8,7 +8,6 @@ import System.IO (hPutStrLn, stderr)
 import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
-import HsImport.Types
 
 main = defaultMain tests
 
@@ -116,7 +115,7 @@ test_ testName config args =
       inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
 
 
-prettyPrint :: ImportDecl -> String
+prettyPrint :: HI.ImportDecl -> String
 prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName _ modName, HS.importSpecs = Just (HS.ImportSpecList _ False syms) } =
    "import " ++ modName ++ " ( " ++ ppSyms ++ " )"
    where
@@ -129,21 +128,21 @@ prettyPrint HS.ImportDecl { HS.importModule = HS.ModuleName _ modName, HS.import
 prettyPrint _ = "Uupps"
 
 
-importPosAfterLast :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
+importPosAfterLast :: HI.ImportDecl -> [HI.ImportDecl] -> Maybe HI.ImportPos
 importPosAfterLast _ []      = Nothing
 importPosAfterLast _ imports = Just . HI.After . last $ imports
 
 
-importPosBeforeLast :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
+importPosBeforeLast :: HI.ImportDecl -> [HI.ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeLast _ []      = Nothing
 importPosBeforeLast _ imports = Just . HI.Before . last $ imports
 
 
-importPosAfterFirst :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
+importPosAfterFirst :: HI.ImportDecl -> [HI.ImportDecl] -> Maybe HI.ImportPos
 importPosAfterFirst _ []      = Nothing
 importPosAfterFirst _ imports = Just . HI.After . head $ imports
 
 
-importPosBeforeFirst :: ImportDecl -> [ImportDecl] -> Maybe HI.ImportPos
+importPosBeforeFirst :: HI.ImportDecl -> [HI.ImportDecl] -> Maybe HI.ImportPos
 importPosBeforeFirst _ []      = Nothing
 importPosBeforeFirst _ imports = Just . HI.Before . head $ imports

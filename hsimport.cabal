@@ -1,6 +1,6 @@
 cabal-version: >=1.9.2
 name: hsimport
-version: 0.8.8
+version: 0.9.0
 license: BSD3
 license-file: LICENSE
 maintainer: daniel.trstenjak@gmail.com
@@ -30,7 +30,6 @@ library
         HsImport.Config
         HsImport.Args
         HsImport.ImportPos
-        HsImport.Types
     cpp-options: -DCABAL
     hs-source-dirs: lib
     other-modules:
@@ -41,6 +40,7 @@ library
         HsImport.Parse
         HsImport.PrettyPrint
         HsImport.Utils
+        HsImport.Types
         Paths_hsimport
     ghc-options: -W
     build-depends:
