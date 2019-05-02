@@ -65,7 +65,7 @@ importModuleWithSymbol moduleName symbolImport module_
          then NoImportChange
          else case find hasImportedSymbols matching of
                    Just impDecl ->
-                      ReplaceImportAt (srcSpan impDecl) (addSymbol impDecl symbolImport)
+                      ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
 
                    Nothing      ->
                       FindImportPos $ importDeclWithSymbol moduleName symbolImport
@@ -241,11 +241,11 @@ srcLineForNewImport module_ =
       newSrcLine :: Annotation -> [ImportDecl] -> [Decl] -> Maybe SrcLine
       newSrcLine ann imports decls
          | not $ null imports
-         = Just (firstSrcLine $ last imports)
+         = Just (firstSrcLine . HS.ann $ last imports)
 
          | (decl:_) <- decls
          , sLoc <- declSrcLoc decl
-         , HS.srcLine sLoc >= HS.startLine (srcSpanInfoFromAnnotation ann)
+         , HS.srcLine sLoc >= firstSrcLine ann
          = Just $ max 0 (HS.srcLine sLoc - 1)
 
          | otherwise

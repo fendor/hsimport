@@ -10,22 +10,10 @@ module HsImport.Utils
 import qualified Language.Haskell.Exts as HS
 import HsImport.Types
 
-firstSrcLine :: (HS.Annotated ann) => ann Annotation -> SrcLine
-firstSrcLine = HS.startLine . srcSpanInfo
-
-
-lastSrcLine :: (HS.Annotated ann) => ann Annotation -> SrcLine
-lastSrcLine = HS.srcSpanEndLine . srcSpan
-
-
-srcSpan :: (HS.Annotated ann) => ann Annotation -> SrcSpan
-srcSpan = HS.srcInfoSpan . srcSpanInfo
-
-
 declSrcLoc :: Decl -> SrcLoc
 declSrcLoc decl = HS.SrcLoc srcFile srcLine srcCol
    where
-      declSrcSpan = srcSpan decl
+      declSrcSpan = srcSpan . HS.ann $ decl
       srcFile     = HS.srcSpanFilename declSrcSpan
       srcLine     = HS.srcSpanStartLine declSrcSpan
       srcCol      = HS.srcSpanStartColumn declSrcSpan
