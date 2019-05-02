@@ -8,33 +8,30 @@ module HsImport.Utils
    ) where
 
 import qualified Language.Haskell.Exts as HS
+import HsImport.Types
 
-type SrcLine      = Int
-type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
-type HsModule     = HS.Module HS.SrcSpanInfo
-
-firstSrcLine :: HsImportDecl -> SrcLine
-firstSrcLine = HS.startLine . HS.importAnn
+firstSrcLine :: (HS.Annotated ann) => ann Annotation -> SrcLine
+firstSrcLine = HS.startLine . srcSpanInfo
 
 
-srcSpan :: HsImportDecl -> HS.SrcSpan
-srcSpan = HS.srcInfoSpan . HS.importAnn
-
-
-lastSrcLine :: HsImportDecl -> SrcLine
+lastSrcLine :: (HS.Annotated ann) => ann Annotation -> SrcLine
 lastSrcLine = HS.srcSpanEndLine . srcSpan
 
 
-declSrcLoc :: HS.Decl HS.SrcSpanInfo -> HS.SrcLoc
+srcSpan :: (HS.Annotated ann) => ann Annotation -> SrcSpan
+srcSpan = HS.srcInfoSpan . srcSpanInfo
+
+
+declSrcLoc :: Decl -> SrcLoc
 declSrcLoc decl = HS.SrcLoc srcFile srcLine srcCol
    where
-      srcSpan = HS.srcInfoSpan . HS.ann $ decl
-      srcFile = HS.srcSpanFilename srcSpan
-      srcLine = HS.srcSpanStartLine srcSpan
-      srcCol  = HS.srcSpanStartColumn srcSpan
+      declSrcSpan = srcSpan decl
+      srcFile     = HS.srcSpanFilename declSrcSpan
+      srcLine     = HS.srcSpanStartLine declSrcSpan
+      srcCol      = HS.srcSpanStartColumn declSrcSpan
 
 
-importDecls :: HsModule -> [HsImportDecl]
+importDecls :: Module -> [ImportDecl]
 importDecls (HS.Module _ _ _ imports _)            = imports
 importDecls (HS.XmlPage _ _ _ _ _ _ _)             = []
 importDecls (HS.XmlHybrid _ _ _ imports _ _ _ _ _) = imports

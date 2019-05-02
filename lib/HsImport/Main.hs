@@ -15,7 +15,7 @@ import qualified Data.Text.IO as TIO
 import qualified Config.Dyre as Dyre
 import qualified Language.Haskell.Exts as HS
 import HsImport.ImportChange
-import HsImport.ImportSpec
+import HsImport.HsImportSpec
 import HsImport.ImportPos (ImportPos(..))
 import qualified HsImport.Args as Args
 import HsImport.Config
@@ -55,7 +55,7 @@ hsimportWithArgs config args = do
         Right spec  -> hsimportWithSpec config spec >> return Nothing
 
 
-hsimportWithSpec :: Config -> ImportSpec -> IO ()
+hsimportWithSpec :: Config -> HsImportSpec -> IO ()
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
 

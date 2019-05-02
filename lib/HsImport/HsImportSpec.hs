@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell, PatternGuards #-}
 
-module HsImport.ImportSpec
-   ( ImportSpec(..)
+module HsImport.HsImportSpec
+   ( HsImportSpec(..)
    , hsImportSpec
    ) where
 
@@ -11,31 +11,31 @@ import HsImport.Args (HsImportArgs)
 import HsImport.Parse (parseFile)
 import HsImport.SymbolImport (SymbolImport(..))
 import HsImport.ModuleImport
+import HsImport.Types
 import Data.List (find)
 
-data ImportSpec = ImportSpec
+data HsImportSpec = HsImportSpec
    { sourceFile    :: FilePath
-   , parsedSrcFile :: HS.Module HS.SrcSpanInfo
+   , parsedSrcFile :: Module
    , moduleImport  :: ModuleImport
    , symbolImport  :: Maybe SymbolImport
    , saveToFile    :: Maybe FilePath
    } deriving (Show)
 
 
-type Error = String
-hsImportSpec :: HsImportArgs -> IO (Either Error ImportSpec)
+hsImportSpec :: HsImportArgs -> IO (Either Error HsImportSpec)
 hsImportSpec args
    | Just error <- checkArgs args = return $ Left error
    | otherwise = do
       result <- parseFile $ Args.inputSrcFile args
       case result of
            Right (HS.ParseOk hsModule) -> return $ Right $
-              ImportSpec { sourceFile    = Args.inputSrcFile args
-                         , parsedSrcFile = hsModule
-                         , moduleImport  = module_
-                         , symbolImport  = symbolImport
-                         , saveToFile    = saveToFile
-                         }
+              HsImportSpec { sourceFile    = Args.inputSrcFile args
+                           , parsedSrcFile = hsModule
+                           , moduleImport  = module_
+                           , symbolImport  = symbolImport
+                           , saveToFile    = saveToFile
+                           }
 
            Right (HS.ParseFailed srcLoc error) -> return $ Left (show srcLoc ++ error)
 

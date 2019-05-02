@@ -10,30 +10,28 @@ module HsImport.ImportPos
 import qualified Language.Haskell.Exts as HS
 import Data.List.Index (ifoldl')
 import Data.List.Split (splitOn)
+import HsImport.Types
 
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
 #endif
 
-type ModuleName   = String
-type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
-
 -- | Where a new import declaration should be added.
-data ImportPos = Before HsImportDecl -- ^ before the specified import declaration
-               | After  HsImportDecl -- ^ after the specified import declaration
+data ImportPos = Before ImportDecl -- ^ before the specified import declaration
+               | After  ImportDecl -- ^ after the specified import declaration
                deriving (Show, Eq)
 
 
 -- | Returns the position where the import declaration for the
 --   new import should be put into the list of import declarations.
-findImportPos :: HsImportDecl -> [HsImportDecl] -> Maybe ImportPos
+findImportPos :: ImportDecl -> [ImportDecl] -> Maybe ImportPos
 findImportPos newImport imports = After <$> bestMatchingImport name imports
    where
       HS.ModuleName _ name = HS.importModule newImport
 
 
 -- | Returns all import declarations having the same module name.
-matchingImports :: ModuleName -> [HsImportDecl] -> [HsImportDecl]
+matchingImports :: ModuleName -> [ImportDecl] -> [ImportDecl]
 matchingImports moduleName imports =
    [ i
    | i@HS.ImportDecl {HS.importModule = HS.ModuleName _ name} <- imports
@@ -44,7 +42,7 @@ matchingImports moduleName imports =
 -- | Returns the best matching import declaration for the given module name.
 --   E.g. if the module name is "Foo.Bar.Boo", then "Foo.Bar" is considered
 --   better matching than "Foo".
-bestMatchingImport :: ModuleName -> [HsImportDecl] -> Maybe HsImportDecl
+bestMatchingImport :: ModuleName -> [ImportDecl] -> Maybe ImportDecl
 bestMatchingImport _          []      = Nothing
 bestMatchingImport moduleName imports =
    case ifoldl' computeMatches Nothing splittedMods of

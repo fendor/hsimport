@@ -30,10 +30,11 @@ library
         HsImport.Config
         HsImport.Args
         HsImport.ImportPos
+        HsImport.Types
     cpp-options: -DCABAL
     hs-source-dirs: lib
     other-modules:
-        HsImport.ImportSpec
+        HsImport.HsImportSpec
         HsImport.ModuleImport
         HsImport.SymbolImport
         HsImport.ImportChange

@@ -14,22 +14,19 @@ import HsImport.SymbolImport (SymbolImport(..))
 import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
-
-type SrcLine      = Int
-type HsImportDecl = HS.ImportDecl HS.SrcSpanInfo
-type HsModule     = HS.Module HS.SrcSpanInfo
+import HsImport.Types
 
 -- | How the import declarations should be changed
 data ImportChange
-   = ReplaceImportAt HS.SrcSpan HsImportDecl -- ^ replace the import declaration at SrcSpan
-   | AddImportAfter SrcLine HsImportDecl     -- ^ add import declaration after SrcLine
-   | AddImportAtEnd HsImportDecl             -- ^ add import declaration at end of source file
-   | FindImportPos HsImportDecl              -- ^ search for an insert position for the import declaration
-   | NoImportChange                          -- ^ no changes of the import declarations
+   = ReplaceImportAt SrcSpan ImportDecl -- ^ replace the import declaration at SrcSpan
+   | AddImportAfter SrcLine ImportDecl  -- ^ add import declaration after SrcLine
+   | AddImportAtEnd ImportDecl          -- ^ add import declaration at end of source file
+   | FindImportPos ImportDecl           -- ^ search for an insert position for the import declaration
+   | NoImportChange                     -- ^ no changes of the import declarations
    deriving (Show)
 
 
-importChanges :: ModuleImport -> Maybe SymbolImport -> HsModule -> [ImportChange]
+importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
 importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
    [ importModule moduleName hsModule ]
 
@@ -45,7 +42,7 @@ importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
    ]
 
 
-importModule :: String -> HsModule -> ImportChange
+importModule :: String -> Module -> ImportChange
 importModule moduleName module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any entireModuleImported matching
@@ -61,7 +58,7 @@ importModule moduleName module_
            Nothing      -> AddImportAtEnd (importDecl moduleName)
 
 
-importModuleWithSymbol :: String -> SymbolImport -> HsModule -> ImportChange
+importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
 importModuleWithSymbol moduleName symbolImport module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any entireModuleImported matching || any (symbolImported symbolImport) matching
@@ -88,7 +85,7 @@ importModuleWithSymbol moduleName symbolImport module_
          HS.ImportSpecList srcSpan hid (specs ++ [importSpec symbolImport])
 
 
-importQualifiedModule :: String -> String -> HsModule -> ImportChange
+importQualifiedModule :: String -> String -> Module -> ImportChange
 importQualifiedModule moduleName qualifiedName module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any (hasQualifiedImport qualifiedName) matching
@@ -104,7 +101,7 @@ importQualifiedModule moduleName qualifiedName module_
            Nothing      -> AddImportAtEnd (qualifiedImportDecl moduleName qualifiedName)
 
 
-importModuleAs :: String -> String -> HsModule -> ImportChange
+importModuleAs :: String -> String -> Module -> ImportChange
 importModuleAs moduleName asName module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any (hasAsImport asName) matching
@@ -120,12 +117,12 @@ importModuleAs moduleName asName module_
            Nothing      -> AddImportAtEnd (asImportDecl moduleName asName)
 
 
-entireModuleImported :: HsImportDecl -> Bool
+entireModuleImported :: ImportDecl -> Bool
 entireModuleImported import_ =
    not (HS.importQualified import_) && isNothing (HS.importSpecs import_)
 
 
-hasQualifiedImport :: String -> HsImportDecl -> Bool
+hasQualifiedImport :: String -> ImportDecl -> Bool
 hasQualifiedImport qualifiedName import_
    | HS.importQualified import_
    , Just (HS.ModuleName _ importAs) <- HS.importAs import_
@@ -135,7 +132,7 @@ hasQualifiedImport qualifiedName import_
    | otherwise = False
 
 
-hasAsImport :: String -> HsImportDecl -> Bool
+hasAsImport :: String -> ImportDecl -> Bool
 hasAsImport asName import_
    | not $ HS.importQualified import_
    , Just (HS.ModuleName _ importAs) <- HS.importAs import_
@@ -146,7 +143,7 @@ hasAsImport asName import_
    = False
 
 
-symbolImported :: SymbolImport -> HsImportDecl -> Bool
+symbolImported :: SymbolImport -> ImportDecl -> Bool
 symbolImported symbolImport import_
    | Just (HS.ImportSpecList _ False hsSymbols) <- HS.importSpecs import_
    , any (imports symbolImport) hsSymbols
@@ -173,7 +170,7 @@ symbolImported symbolImport import_
       toName (HS.ConName _ name) = name
 
 
-hasImportedSymbols :: HsImportDecl -> Bool
+hasImportedSymbols :: ImportDecl -> Bool
 hasImportedSymbols import_
    | Just (HS.ImportSpecList _ False (_:_)) <- HS.importSpecs import_
    = True
@@ -181,7 +178,7 @@ hasImportedSymbols import_
    | otherwise
    = False
 
-importDecl :: String -> HsImportDecl
+importDecl :: String -> ImportDecl
 importDecl moduleName = HS.ImportDecl
    { HS.importAnn       = HS.noSrcSpan
    , HS.importModule    = HS.ModuleName HS.noSrcSpan moduleName
@@ -194,7 +191,7 @@ importDecl moduleName = HS.ImportDecl
    }
 
 
-importDeclWithSymbol :: String -> SymbolImport -> HsImportDecl
+importDeclWithSymbol :: String -> SymbolImport -> ImportDecl
 importDeclWithSymbol moduleName symbolImport =
    (importDecl moduleName) { HS.importSpecs = Just (HS.ImportSpecList HS.noSrcSpan
                                                                       False
@@ -202,7 +199,7 @@ importDeclWithSymbol moduleName symbolImport =
                            }
 
 
-qualifiedImportDecl :: String -> String -> HsImportDecl
+qualifiedImportDecl :: String -> String -> ImportDecl
 qualifiedImportDecl moduleName qualifiedName =
    (importDecl moduleName) { HS.importQualified = True
                            , HS.importAs        = if moduleName /= qualifiedName
@@ -211,14 +208,14 @@ qualifiedImportDecl moduleName qualifiedName =
                            }
 
 
-asImportDecl :: String -> String -> HsImportDecl
+asImportDecl :: String -> String -> ImportDecl
 asImportDecl moduleName asName =
    (importDecl moduleName) { HS.importQualified = False
                            , HS.importAs        = Just $ HS.ModuleName HS.noSrcSpan asName
                            }
 
 
-importSpec :: SymbolImport -> HS.ImportSpec HS.SrcSpanInfo
+importSpec :: SymbolImport -> ImportSpec
 importSpec (Symbol symName)             = HS.IVar HS.noSrcSpan (hsName symName)
 importSpec (AllOfSymbol symName)        = HS.IThingAll HS.noSrcSpan (hsName symName)
 importSpec (SomeOfSymbol symName names) = HS.IThingWith HS.noSrcSpan
@@ -226,7 +223,7 @@ importSpec (SomeOfSymbol symName names) = HS.IThingWith HS.noSrcSpan
                                                         (map ((HS.VarName HS.noSrcSpan) . hsName) names)
 
 
-hsName :: String -> HS.Name HS.SrcSpanInfo
+hsName :: String -> Name
 hsName symbolName
    | isSymbol  = HS.Symbol HS.noSrcSpan symbolName
    | otherwise = HS.Ident HS.noSrcSpan symbolName
@@ -234,7 +231,7 @@ hsName symbolName
       isSymbol = any (A.notInClass "a-zA-Z0-9_'") symbolName
 
 
-srcLineForNewImport :: HsModule -> Maybe SrcLine
+srcLineForNewImport :: Module -> Maybe SrcLine
 srcLineForNewImport module_ =
    case module_ of
         HS.Module srcSpan _ _ imports decls            -> newSrcLine srcSpan imports decls

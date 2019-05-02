@@ -8,8 +8,7 @@ import System.IO (hPutStrLn, stderr)
 import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
-
-type ImportDecl = HS.ImportDecl HS.SrcSpanInfo
+import HsImport.Types
 
 main = defaultMain tests
 

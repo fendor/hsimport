@@ -10,8 +10,9 @@ import qualified Language.Haskell.Exts as HS
 import Data.Monoid (mconcat)
 #endif
 
+import HsImport.Types
 
-prettyPrint :: HS.ImportDecl HS.SrcSpanInfo -> String
+prettyPrint :: ImportDecl -> String
 prettyPrint importDecl =
    -- remove newlines from pretty printed ImportDecl
    case lines $ HS.prettyPrint importDecl of

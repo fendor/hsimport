@@ -15,10 +15,9 @@ import Control.Exception (catch, SomeException)
 import Control.Applicative ((<$>))
 #endif
 
-type Error         = String
-type HsParseResult = HS.ParseResult (HS.Module HS.SrcSpanInfo)
+import HsImport.Types
 
-parseFile :: FilePath -> IO (Either Error HsParseResult)
+parseFile :: FilePath -> IO (Either Error ParseResult)
 parseFile file = do
    srcFile <- unlines. replaceCPPByComment . lines . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile
@@ -43,11 +42,11 @@ parseFile file = do
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
-parseInvalidSource :: [String] -> Int -> IO (Maybe HsParseResult)
+parseInvalidSource :: [String] -> Int -> IO (Maybe ParseResult)
 parseInvalidSource srcLines firstInvalidLine = do
    parseInvalidSource' 1 firstInvalidLine Nothing 0
    where
-      parseInvalidSource' :: Int -> Int -> Maybe (Int, HsParseResult) -> Int -> IO (Maybe HsParseResult)
+      parseInvalidSource' :: Int -> Int -> Maybe (Int, ParseResult) -> Int -> IO (Maybe ParseResult)
       parseInvalidSource' lastValidLine currLastLine maxParseOk iteration
          | null srcLines || lastValidLine >= currLastLine
          = return Nothing
@@ -84,7 +83,7 @@ parseInvalidSource srcLines firstInvalidLine = do
                     _ -> Just (nextLine, nextResult)
 
 
-parseFileContents :: String -> HsParseResult
+parseFileContents :: String -> ParseResult
 parseFileContents = HS.parseFileContentsWithMode parseMode
    where
       parseMode = HS.defaultParseMode { HS.fixities = Just [] }
