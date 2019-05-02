@@ -84,6 +84,12 @@ parseInvalidSource srcLines firstInvalidLine = do
 
 
 parseFileContents :: String -> ParseResult
-parseFileContents = HS.parseFileContentsWithMode parseMode
+parseFileContents contents =
+   let result = HS.parseFileContentsWithComments parseMode contents
+       in case result of
+               HS.ParseOk res          -> HS.ParseOk $ HS.associateHaddock res
+               HS.ParseFailed sloc msg -> HS.ParseFailed sloc msg
+
    where
       parseMode = HS.defaultParseMode { HS.fixities = Just [] }
+

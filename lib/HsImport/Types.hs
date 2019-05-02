@@ -6,7 +6,7 @@ import qualified Language.Haskell.Exts as HS
 type SrcLine     = Int
 type SrcSpan     = HS.SrcSpan
 type SrcLoc      = HS.SrcLoc
-type Annotation  = HS.SrcSpanInfo
+type Annotation  = (HS.SrcSpanInfo, [HS.Comment])
 type Decl        = HS.Decl Annotation
 type ImportDecl  = HS.ImportDecl Annotation
 type ImportSpec  = HS.ImportSpec Annotation
@@ -17,4 +17,10 @@ type ParseResult = HS.ParseResult Module
 type Error       = String
 
 srcSpanInfo :: (HS.Annotated ann) => ann Annotation -> HS.SrcSpanInfo
-srcSpanInfo = HS.ann
+srcSpanInfo = srcSpanInfoFromAnnotation . HS.ann
+
+srcSpanInfoFromAnnotation :: Annotation -> HS.SrcSpanInfo
+srcSpanInfoFromAnnotation = fst
+
+noAnnotation :: Annotation
+noAnnotation = (HS.noSrcSpan, [])

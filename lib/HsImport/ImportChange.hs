@@ -180,8 +180,8 @@ hasImportedSymbols import_
 
 importDecl :: String -> ImportDecl
 importDecl moduleName = HS.ImportDecl
-   { HS.importAnn       = HS.noSrcSpan
-   , HS.importModule    = HS.ModuleName HS.noSrcSpan moduleName
+   { HS.importAnn       = noAnnotation
+   , HS.importModule    = HS.ModuleName noAnnotation moduleName
    , HS.importQualified = False
    , HS.importSrc       = False
    , HS.importSafe      = False
@@ -193,7 +193,7 @@ importDecl moduleName = HS.ImportDecl
 
 importDeclWithSymbol :: String -> SymbolImport -> ImportDecl
 importDeclWithSymbol moduleName symbolImport =
-   (importDecl moduleName) { HS.importSpecs = Just (HS.ImportSpecList HS.noSrcSpan
+   (importDecl moduleName) { HS.importSpecs = Just (HS.ImportSpecList noAnnotation
                                                                       False
                                                                       [importSpec symbolImport])
                            }
@@ -203,7 +203,7 @@ qualifiedImportDecl :: String -> String -> ImportDecl
 qualifiedImportDecl moduleName qualifiedName =
    (importDecl moduleName) { HS.importQualified = True
                            , HS.importAs        = if moduleName /= qualifiedName
-                                                     then Just $ HS.ModuleName HS.noSrcSpan qualifiedName
+                                                     then Just $ HS.ModuleName noAnnotation qualifiedName
                                                      else Nothing
                            }
 
@@ -211,22 +211,22 @@ qualifiedImportDecl moduleName qualifiedName =
 asImportDecl :: String -> String -> ImportDecl
 asImportDecl moduleName asName =
    (importDecl moduleName) { HS.importQualified = False
-                           , HS.importAs        = Just $ HS.ModuleName HS.noSrcSpan asName
+                           , HS.importAs        = Just $ HS.ModuleName noAnnotation asName
                            }
 
 
 importSpec :: SymbolImport -> ImportSpec
-importSpec (Symbol symName)             = HS.IVar HS.noSrcSpan (hsName symName)
-importSpec (AllOfSymbol symName)        = HS.IThingAll HS.noSrcSpan (hsName symName)
-importSpec (SomeOfSymbol symName names) = HS.IThingWith HS.noSrcSpan
+importSpec (Symbol symName)             = HS.IVar noAnnotation (hsName symName)
+importSpec (AllOfSymbol symName)        = HS.IThingAll noAnnotation (hsName symName)
+importSpec (SomeOfSymbol symName names) = HS.IThingWith noAnnotation
                                                         (hsName symName)
-                                                        (map ((HS.VarName HS.noSrcSpan) . hsName) names)
+                                                        (map ((HS.VarName noAnnotation) . hsName) names)
 
 
 hsName :: String -> Name
 hsName symbolName
-   | isSymbol  = HS.Symbol HS.noSrcSpan symbolName
-   | otherwise = HS.Ident HS.noSrcSpan symbolName
+   | isSymbol  = HS.Symbol noAnnotation symbolName
+   | otherwise = HS.Ident noAnnotation symbolName
    where
       isSymbol = any (A.notInClass "a-zA-Z0-9_'") symbolName
 
@@ -234,17 +234,18 @@ hsName symbolName
 srcLineForNewImport :: Module -> Maybe SrcLine
 srcLineForNewImport module_ =
    case module_ of
-        HS.Module srcSpan _ _ imports decls            -> newSrcLine srcSpan imports decls
-        HS.XmlPage _ _ _ _ _ _ _                       -> Nothing
-        HS.XmlHybrid srcSpan _ _ imports decls _ _ _ _ -> newSrcLine srcSpan imports decls
+        HS.Module ann _ _ imports decls            -> newSrcLine ann imports decls
+        HS.XmlPage _ _ _ _ _ _ _                   -> Nothing
+        HS.XmlHybrid ann _ _ imports decls _ _ _ _ -> newSrcLine ann imports decls
    where
-      newSrcLine srcSpan imports decls
+      newSrcLine :: Annotation -> [ImportDecl] -> [Decl] -> Maybe SrcLine
+      newSrcLine ann imports decls
          | not $ null imports
          = Just (firstSrcLine $ last imports)
 
          | (decl:_) <- decls
          , sLoc <- declSrcLoc decl
-         , HS.srcLine sLoc >= HS.startLine srcSpan
+         , HS.srcLine sLoc >= HS.startLine (srcSpanInfoFromAnnotation ann)
          = Just $ max 0 (HS.srcLine sLoc - 1)
 
          | otherwise
