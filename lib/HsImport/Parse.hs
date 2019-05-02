@@ -19,7 +19,7 @@ import HsImport.Types
 
 parseFile :: FilePath -> IO (Either Error ParseResult)
 parseFile file = do
-   srcFile <- unlines. replaceCPPByComment . lines . T.unpack <$> TIO.readFile file
+   srcFile <- unlines. replaceCPPByEmptyLine . lines . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
@@ -33,10 +33,10 @@ parseFile file = do
             srcResult <- parseInvalidSource srcLines (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
    where
-      -- | replace CPP directives by a fake comment
-      replaceCPPByComment = map $ \line ->
+      -- | replace CPP directives by an empty line
+      replaceCPPByEmptyLine = map $ \line ->
          if "#" `isPrefixOf` line
-            then "-- fake hsimport comment"
+            then ""
             else line
 
 
