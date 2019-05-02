@@ -11,7 +11,7 @@ import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
 import HsImport.Symbol (Symbol(..))
-import HsImport.Module (Module(..))
+import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
 
@@ -29,14 +29,14 @@ data ImportChange
    deriving (Show)
 
 
-importChanges :: Module -> Maybe Symbol -> HsModule -> [ImportChange]
-importChanges (Module moduleName False Nothing) Nothing hsModule =
+importChanges :: ModuleImport -> Maybe Symbol -> HsModule -> [ImportChange]
+importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
    [ importModule moduleName hsModule ]
 
-importChanges (Module moduleName False Nothing) (Just symbol) hsModule =
+importChanges (ModuleImport moduleName False Nothing) (Just symbol) hsModule =
    [ importModuleWithSymbol moduleName symbol hsModule ]
 
-importChanges (Module moduleName qualified as) symbol hsModule =
+importChanges (ModuleImport moduleName qualified as) symbol hsModule =
    [ maybe NoImportChange (\sym -> importModuleWithSymbol moduleName sym hsModule) symbol
 
    , if qualified

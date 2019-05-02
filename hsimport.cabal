@@ -34,7 +34,7 @@ library
     hs-source-dirs: lib
     other-modules:
         HsImport.ImportSpec
-        HsImport.Module
+        HsImport.ModuleImport
         HsImport.Symbol
         HsImport.ImportChange
         HsImport.Parse

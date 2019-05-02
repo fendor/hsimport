@@ -10,13 +10,13 @@ import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
 import HsImport.Parse (parseFile)
 import HsImport.Symbol (Symbol(..))
-import HsImport.Module
+import HsImport.ModuleImport
 import Data.List (find)
 
 data ImportSpec = ImportSpec
    { sourceFile     :: FilePath
    , parsedSrcFile  :: HS.Module HS.SrcSpanInfo
-   , moduleToImport :: Module
+   , moduleImport   :: ModuleImport
    , symbolToImport :: Maybe Symbol
    , saveToFile     :: Maybe FilePath
    } deriving (Show)
@@ -30,9 +30,9 @@ hsImportSpec args
       result <- parseFile $ Args.inputSrcFile args
       case result of
            Right (HS.ParseOk hsModule) -> return $ Right $
-              ImportSpec { sourceFile    = Args.inputSrcFile args
-                         , parsedSrcFile = hsModule
-                         , moduleToImport = module_
+              ImportSpec { sourceFile     = Args.inputSrcFile args
+                         , parsedSrcFile  = hsModule
+                         , moduleImport   = module_
                          , symbolToImport = symbol
                          , saveToFile     = saveToFile
                          }
@@ -42,10 +42,10 @@ hsImportSpec args
            Left error -> return $ Left error
 
    where
-      module_ = Module { moduleName = Args.moduleName args
-                       , qualified  = not . null $ Args.qualifiedName args
-                       , as         = find (/= "") [Args.qualifiedName args, Args.as args]
-                       }
+      module_ = ModuleImport { moduleName = Args.moduleName args
+                             , qualified  = not . null $ Args.qualifiedName args
+                             , as         = find (/= "") [Args.qualifiedName args, Args.as args]
+                             }
 
       symbol =
          case Args.symbolName args of

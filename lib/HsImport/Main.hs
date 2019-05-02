@@ -57,7 +57,7 @@ hsimportWithArgs config args = do
 
 hsimportWithSpec :: Config -> ImportSpec -> IO ()
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
-   let impChanges = importChanges (moduleToImport spec) (symbolToImport spec) (parsedSrcFile spec)
+   let impChanges = importChanges (moduleImport spec) (symbolToImport spec) (parsedSrcFile spec)
 
    srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
    let srcLines' = applyChanges srcLines impChanges
