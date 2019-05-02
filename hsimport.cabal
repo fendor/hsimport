@@ -35,7 +35,7 @@ library
     other-modules:
         HsImport.ImportSpec
         HsImport.ModuleImport
-        HsImport.Symbol
+        HsImport.SymbolImport
         HsImport.ImportChange
         HsImport.Parse
         HsImport.PrettyPrint

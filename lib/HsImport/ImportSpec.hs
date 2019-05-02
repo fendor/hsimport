@@ -9,16 +9,16 @@ import qualified Language.Haskell.Exts as HS
 import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
 import HsImport.Parse (parseFile)
-import HsImport.Symbol (Symbol(..))
+import HsImport.SymbolImport (SymbolImport(..))
 import HsImport.ModuleImport
 import Data.List (find)
 
 data ImportSpec = ImportSpec
-   { sourceFile     :: FilePath
-   , parsedSrcFile  :: HS.Module HS.SrcSpanInfo
-   , moduleImport   :: ModuleImport
-   , symbolToImport :: Maybe Symbol
-   , saveToFile     :: Maybe FilePath
+   { sourceFile    :: FilePath
+   , parsedSrcFile :: HS.Module HS.SrcSpanInfo
+   , moduleImport  :: ModuleImport
+   , symbolImport  :: Maybe SymbolImport
+   , saveToFile    :: Maybe FilePath
    } deriving (Show)
 
 
@@ -30,11 +30,11 @@ hsImportSpec args
       result <- parseFile $ Args.inputSrcFile args
       case result of
            Right (HS.ParseOk hsModule) -> return $ Right $
-              ImportSpec { sourceFile     = Args.inputSrcFile args
-                         , parsedSrcFile  = hsModule
-                         , moduleImport   = module_
-                         , symbolToImport = symbol
-                         , saveToFile     = saveToFile
+              ImportSpec { sourceFile    = Args.inputSrcFile args
+                         , parsedSrcFile = hsModule
+                         , moduleImport  = module_
+                         , symbolImport  = symbolImport
+                         , saveToFile    = saveToFile
                          }
 
            Right (HS.ParseFailed srcLoc error) -> return $ Left (show srcLoc ++ error)
@@ -47,7 +47,7 @@ hsImportSpec args
                              , as         = find (/= "") [Args.qualifiedName args, Args.as args]
                              }
 
-      symbol =
+      symbolImport =
          case Args.symbolName args of
               ""  -> Nothing
 
