@@ -2,6 +2,7 @@
 
 module HsImport.Parse
    ( parseFile
+   , replaceCpp
    ) where
 
 import qualified Data.Text.IO as TIO
@@ -19,7 +20,7 @@ import HsImport.Types
 
 parseFile :: FilePath -> IO (Either Error ParseResult)
 parseFile file = do
-   srcFile <- unlines. replaceCPPByEmptyLine . lines . T.unpack <$> TIO.readFile file
+   srcFile <- replaceCpp . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile
              case result of
                   HS.ParseOk _ -> return $ Right result
@@ -32,12 +33,21 @@ parseFile file = do
             let srcLines = lines srcFile
             srcResult <- parseInvalidSource srcLines (length srcLines)
             return $ maybe (Left $ show e) Right srcResult)
+
+
+-- | replace the complete cpp directive, from #ifdef till #endif, by empty lines
+replaceCpp :: String -> String
+replaceCpp contents = unlines . reverse $ go (lines contents) [] 0
    where
-      -- | replace CPP directives by an empty line
-      replaceCPPByEmptyLine = map $ \line ->
-         if "#" `isPrefixOf` line
-            then ""
-            else line
+      go [] newLines _ = newLines
+      go lines newLines ifdefLevel = go lines' newLines' ifdefLevel'
+         where
+            currLine    = head lines
+            hasIf       = "#if" `isPrefixOf` currLine
+            hasEndIf    = "#endif" `isPrefixOf` currLine
+            ifdefLevel' = ifdefLevel + (if hasIf then 1 else 0) - (if hasEndIf then 1 else 0)
+            lines'      = tail lines
+            newLines'   = (if (max ifdefLevel ifdefLevel') > 0  then "" else currLine) : newLines
 
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
