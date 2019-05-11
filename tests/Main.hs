@@ -8,11 +8,12 @@ import System.IO (hPutStrLn, stderr)
 import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
+import qualified HsImport.Parse as HIP
 
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [moduleTests, symbolTests]
+tests = testGroup "Tests" [moduleTests, symbolTests, replaceCppTests]
 
 moduleTests :: TestTree
 moduleTests = testGroup "Module Tests"
@@ -94,6 +95,13 @@ symbolTests = testGroup "Symbol Tests"
    ]
 
 
+replaceCppTests :: TestTree
+replaceCppTests = testGroup "ReplaceCpp Tests"
+   [ replaceCppTest "ReplaceCppTest1"
+   , replaceCppTest "ReplaceCppTest2"
+   ]
+
+
 test :: String -> HI.HsImportArgs -> TestTree
 test testName args = test_ testName HI.defaultConfig args
 
@@ -113,6 +121,22 @@ test_ testName config args =
       goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
       outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
       inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
+
+
+replaceCppTest :: String -> TestTree
+replaceCppTest testName =
+   goldenVsFileDiff testName diff goldenFile outputFile command
+   where
+      command = do
+         contents <- readFile inputFile
+         writeFile outputFile $ HIP.replaceCpp contents
+
+      diff ref new = ["diff", "-u", ref, new]
+
+      goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
+      outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
+      inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
+
 
 
 prettyPrint :: HI.ImportDecl -> String
