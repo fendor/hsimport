@@ -23,7 +23,40 @@ source-repository head
     type: git
     location: https://github.com/dan-t/hsimport
 
-library
+library library-internal
+    exposed-modules:
+        HsImport
+        HsImport.Main
+        HsImport.Config
+        HsImport.Args
+        HsImport.ImportPos
+        HsImport.HsImportSpec
+        HsImport.ModuleImport
+        HsImport.SymbolImport
+        HsImport.ImportChange
+        HsImport.PrettyPrint
+        HsImport.Utils
+        HsImport.Types
+        HsImport.Parse
+        Paths_hsimport
+    cpp-options: -DCABAL
+    hs-source-dirs: lib
+    other-modules:
+    ghc-options: -W
+    build-depends:
+        base,
+        cmdargs,
+        haskell-src-exts,
+        ilist,
+        microlens,
+        mtl,
+        text,
+        split,
+        attoparsec,
+        directory,
+        dyre
+
+library library-external
     exposed-modules:
         HsImport
         HsImport.Main
@@ -37,10 +70,10 @@ library
         HsImport.ModuleImport
         HsImport.SymbolImport
         HsImport.ImportChange
-        HsImport.Parse
         HsImport.PrettyPrint
         HsImport.Utils
         HsImport.Types
+        HsImport.Parse
         Paths_hsimport
     ghc-options: -W
     build-depends:
@@ -64,7 +97,7 @@ executable hsimport
     ghc-prof-options: -fprof-auto -rtsopts
     build-depends:
         base >=3 && <5,
-        hsimport -any
+        library-external -any
 
 test-suite hsimport-tests
     type: exitcode-stdio-1.0
@@ -77,4 +110,4 @@ test-suite hsimport-tests
         tasty-golden >=2.2.0.1 && <2.4,
         filepath >=1.3.0.1 && <1.5,
         haskell-src-exts >=1.18.0 && <1.22,
-        hsimport -any
+        library-internal -any
