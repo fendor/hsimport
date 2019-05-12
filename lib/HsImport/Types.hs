@@ -14,8 +14,17 @@ type ImportSpec  = HS.ImportSpec Annotation
 type Name        = HS.Name Annotation
 type Module      = HS.Module Annotation
 type ModuleName  = String
-type ParseResult = HS.ParseResult Module
 type Error       = String
+
+data ParseResult = ParseResult
+   { -- | the parse result
+     result :: HS.ParseResult Module
+
+     -- | if the source file isn't completely parsable, because e.g.
+     --   it contains incomplete Haskell code, then 'lastValidLine'
+     --   contains the last line till the source is parsable
+   , lastValidLine :: Maybe Int
+   }
 
 firstSrcLine :: Annotation -> SrcLine
 firstSrcLine = minimum . map HS.srcSpanStartLine . srcSpans

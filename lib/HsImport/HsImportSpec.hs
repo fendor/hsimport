@@ -29,7 +29,7 @@ hsImportSpec args
    | otherwise = do
       result <- parseFile $ Args.inputSrcFile args
       case result of
-           Right (HS.ParseOk hsModule) -> return $ Right $
+           Right (ParseResult (HS.ParseOk hsModule) _) -> return $ Right $
               HsImportSpec { sourceFile    = Args.inputSrcFile args
                            , parsedSrcFile = hsModule
                            , moduleImport  = module_
@@ -37,7 +37,7 @@ hsImportSpec args
                            , saveToFile    = saveToFile
                            }
 
-           Right (HS.ParseFailed srcLoc error) -> return $ Left (show srcLoc ++ error)
+           Right (ParseResult (HS.ParseFailed srcLoc error) _) -> return $ Left (show srcLoc ++ error)
 
            Left error -> return $ Left error
 

@@ -7,7 +7,6 @@ module HsImport.Parse
 
 import qualified Data.Text.IO as TIO
 import qualified Data.Text as T
-import Data.Maybe (fromMaybe)
 import Data.List (isPrefixOf)
 import qualified Language.Haskell.Exts as HS
 import Control.Exception (catch, SomeException)
@@ -23,11 +22,13 @@ parseFile file = do
    srcFile <- replaceCpp . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile
              case result of
-                  HS.ParseOk _ -> return $ Right result
+                  HS.ParseOk _ -> return . Right $ ParseResult result Nothing
 
                   HS.ParseFailed srcLoc _ -> do
                      srcResult <- parseInvalidSource (lines srcFile) (HS.srcLine srcLoc)
-                     return $ Right $ fromMaybe result srcResult)
+                     return $ case srcResult of
+                                   Just srcRes -> Right srcRes
+                                   Nothing -> Right $ ParseResult result Nothing)
 
          (\(e :: SomeException) -> do
             let srcLines = lines srcFile
@@ -52,32 +53,36 @@ replaceCpp contents = unlines . reverse $ go (lines contents) [] 0
             newLines'   = (if inCpp then "" else currLine) : newLines
 
 
+type HsParseResult = HS.ParseResult Module
+
+
 -- | tries to find the maximal part of the source file (from the beginning) that contains
 --   valid/complete Haskell code
 parseInvalidSource :: [String] -> Int -> IO (Maybe ParseResult)
 parseInvalidSource srcLines firstInvalidLine = do
    parseInvalidSource' 1 firstInvalidLine Nothing 0
    where
-      parseInvalidSource' :: Int -> Int -> Maybe (Int, ParseResult) -> Int -> IO (Maybe ParseResult)
+      parseInvalidSource' :: Int -> Int -> Maybe (Int, HsParseResult) -> Int -> IO (Maybe ParseResult)
       parseInvalidSource' lastValidLine currLastLine maxParseOk iteration
          | null srcLines || lastValidLine >= currLastLine
          = return Nothing
 
          | iteration >= 10
-         = return (snd <$> maxParseOk)
+         = return $ case maxParseOk of
+                         Just (lastLine, result) -> Just $ ParseResult result (Just lastLine)
+                         Nothing -> Nothing
 
          | otherwise = do
             catch (case parseFileContents source of
                         result@(HS.ParseOk _)
-                           | nextLine == currLastLine ->
-                              return $ Just result
-                           | otherwise                ->
-                              parseInvalidSource' nextLine currLastLine (maxParseOk' result) iteration'
+                           | nextLine == currLastLine -> return . Just $ ParseResult result (Just lastValidLine)
+                           | otherwise -> parseInvalidSource' nextLine currLastLine (maxParseOk' result) iteration'
 
                         HS.ParseFailed srcLoc _
                            | HS.srcLine srcLoc == firstInvalidLine ->
                               parseInvalidSource' lastValidLine nextLine maxParseOk iteration'
-                           | otherwise                             ->
+
+                           | otherwise ->
                               parseInvalidSource' nextLine currLastLine maxParseOk iteration')
 
                   (\(_ :: SomeException) -> parseInvalidSource' lastValidLine nextLine maxParseOk iteration')
@@ -95,7 +100,7 @@ parseInvalidSource srcLines firstInvalidLine = do
                     _ -> Just (nextLine, nextResult)
 
 
-parseFileContents :: String -> ParseResult
+parseFileContents :: String -> HsParseResult
 parseFileContents contents =
    let result = HS.parseFileContentsWithComments parseMode contents
        in case result of
