@@ -4,12 +4,12 @@ module Blub
    , foo
    , bar
    ) where
-
+#include "Foo.h"
 import Ugah.Foo
 import Control.Applicative
-
-
-
+#ifdef FOO
+import Ugah.Blub
+#endif
 f :: Int -> Int
 f = (+ 3)
 

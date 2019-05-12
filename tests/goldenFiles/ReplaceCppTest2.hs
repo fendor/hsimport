@@ -4,7 +4,7 @@ module Blub
    , foo
    , bar
    ) where
-#include "Foo.h"
+
 import Ugah.Foo
 import Control.Applicative
 

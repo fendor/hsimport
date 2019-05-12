@@ -9,11 +9,12 @@ import Data.List (intercalate)
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
 import qualified HsImport.Parse as HIP
+import HsImport.Types
 
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [moduleTests, symbolTests, replaceCppTests]
+tests = testGroup "Tests" [moduleTests, symbolTests, replaceCppTests, parseTests]
 
 moduleTests :: TestTree
 moduleTests = testGroup "Module Tests"
@@ -44,10 +45,10 @@ moduleTests = testGroup "Module Tests"
    , test "ModuleTest24" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.qualifiedName = "CM" }
    , test "ModuleTest25" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.qualifiedName = "Control.Monad" }
    , test "ModuleTest26" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
-   , test_ "ModuleTest27" (HI.defaultConfig { HI.findImportPos = importPosBeforeFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
-   , test_ "ModuleTest28" (HI.defaultConfig { HI.findImportPos = importPosAfterFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
-   , test_ "ModuleTest29" (HI.defaultConfig { HI.findImportPos = importPosBeforeLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
-   , test_ "ModuleTest30" (HI.defaultConfig { HI.findImportPos = importPosAfterLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , configTest "ModuleTest27" (HI.defaultConfig { HI.findImportPos = importPosBeforeFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , configTest "ModuleTest28" (HI.defaultConfig { HI.findImportPos = importPosAfterFirst }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , configTest "ModuleTest29" (HI.defaultConfig { HI.findImportPos = importPosBeforeLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
+   , configTest "ModuleTest30" (HI.defaultConfig { HI.findImportPos = importPosAfterLast }) (HI.defaultArgs { HI.moduleName = "Control.Monad" })
    , test "ModuleTest31" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.as = "CM" }
    , test "ModuleTest32" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest33" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
@@ -88,8 +89,8 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest26" $ HI.defaultArgs { HI.moduleName = "Foo", HI.symbolName = "bar" }
    , test "SymbolTest27" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "g" }
    , test "SymbolTest28" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "d" }
-   , test_ "SymbolTest29" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
-   , test_ "SymbolTest30" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
+   , configTest "SymbolTest29" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
+   , configTest "SymbolTest30" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
    , test "SymbolTest31" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "d" }
    , test "SymbolTest32" $ HI.defaultArgs { HI.moduleName = "Control.Foo", HI.symbolName = "foo" }
    ]
@@ -99,15 +100,23 @@ replaceCppTests :: TestTree
 replaceCppTests = testGroup "ReplaceCpp Tests"
    [ replaceCppTest "ReplaceCppTest1"
    , replaceCppTest "ReplaceCppTest2"
+   , replaceCppTest "ReplaceCppTest3"
+   ]
+
+
+parseTests :: TestTree
+parseTests = testGroup "Parse Tests"
+   [ parseTest "ParseTest1"
+   , parseTest "ParseTest2"
    ]
 
 
 test :: String -> HI.HsImportArgs -> TestTree
-test testName args = test_ testName HI.defaultConfig args
+test testName args = configTest testName HI.defaultConfig args
 
 
-test_ :: String -> HI.Config -> HI.HsImportArgs -> TestTree
-test_ testName config args =
+configTest :: String -> HI.Config -> HI.HsImportArgs -> TestTree
+configTest testName config args =
    goldenVsFileDiff testName diff goldenFile outputFile command
    where
       command = do
@@ -137,6 +146,23 @@ replaceCppTest testName =
       outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
       inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
 
+
+parseTest :: String -> TestTree
+parseTest testName =
+   goldenVsFileDiff testName diff goldenFile outputFile command
+   where
+      command = do
+         Right (ParseResult (HS.ParseOk _) lastValidLine) <- HIP.parseFile inputFile
+         contents <- readFile inputFile
+         case lastValidLine of
+              Just line -> writeFile outputFile $ unlines . take line . lines $ contents
+              Nothing -> writeFile outputFile contents
+
+      diff ref new = ["diff", "-u", ref, new]
+
+      goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
+      outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
+      inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
 
 
 prettyPrint :: HI.ImportDecl -> String
