@@ -55,6 +55,7 @@ moduleTests = testGroup "Module Tests"
    , test "ModuleTest34" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest35" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest36" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest37" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    ]
 
 
