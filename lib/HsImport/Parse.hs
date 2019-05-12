@@ -43,11 +43,13 @@ replaceCpp contents = unlines . reverse $ go (lines contents) [] 0
       go lines newLines ifdefLevel = go lines' newLines' ifdefLevel'
          where
             currLine    = head lines
+            hasCpp      = "#" `isPrefixOf` currLine
             hasIf       = "#if" `isPrefixOf` currLine
             hasEndIf    = "#endif" `isPrefixOf` currLine
             ifdefLevel' = ifdefLevel + (if hasIf then 1 else 0) - (if hasEndIf then 1 else 0)
             lines'      = tail lines
-            newLines'   = (if (max ifdefLevel ifdefLevel') > 0  then "" else currLine) : newLines
+            inCpp       = hasCpp || (max ifdefLevel ifdefLevel') > 0
+            newLines'   = (if inCpp then "" else currLine) : newLines
 
 
 -- | tries to find the maximal part of the source file (from the beginning) that contains
