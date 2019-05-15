@@ -1,13 +1,13 @@
-cabal-version: >=1.9.2
+cabal-version: 2.0
 name: hsimport
-version: 0.9.0
+version: 0.10.0
 license: BSD3
 license-file: LICENSE
 maintainer: daniel.trstenjak@gmail.com
 author: Daniel Trstenjak
 tested-with: ghc ==7.6.2 ghc ==7.6.3 ghc ==7.8.3 ghc ==7.10.1
              ghc ==7.10.2 ghc ==8.0.1 ghc ==8.2.1 ghc ==8.4.2 ghc ==8.6.3
-synopsis: A command line program for extending the import list of a Haskell source file.
+synopsis: Extend the import list of a Haskell source file
 description:
     A command line program for extending the import list of a Haskell source file.
 category: Utils, Development
@@ -22,39 +22,6 @@ extra-source-files:
 source-repository head
     type: git
     location: https://github.com/dan-t/hsimport
-
-library library-internal
-    exposed-modules:
-        HsImport
-        HsImport.Main
-        HsImport.Config
-        HsImport.Args
-        HsImport.ImportPos
-        HsImport.HsImportSpec
-        HsImport.ModuleImport
-        HsImport.SymbolImport
-        HsImport.ImportChange
-        HsImport.PrettyPrint
-        HsImport.Utils
-        HsImport.Types
-        HsImport.Parse
-        Paths_hsimport
-    cpp-options: -DCABAL
-    hs-source-dirs: lib
-    other-modules:
-    ghc-options: -W
-    build-depends:
-        base,
-        cmdargs,
-        haskell-src-exts,
-        ilist,
-        microlens,
-        mtl,
-        text,
-        split,
-        attoparsec,
-        directory,
-        dyre
 
 library
     exposed-modules:
@@ -75,6 +42,7 @@ library
         HsImport.Types
         HsImport.Parse
         Paths_hsimport
+    default-language: Haskell2010
     ghc-options: -W
     build-depends:
         base >=3 && <5,
@@ -89,12 +57,47 @@ library
         directory >=1.2.0.1 && <1.4,
         dyre ==0.8.*
 
+library library-internal
+    exposed-modules:
+        HsImport
+        HsImport.Main
+        HsImport.Config
+        HsImport.Args
+        HsImport.ImportPos
+        HsImport.HsImportSpec
+        HsImport.ModuleImport
+        HsImport.SymbolImport
+        HsImport.ImportChange
+        HsImport.PrettyPrint
+        HsImport.Utils
+        HsImport.Types
+        HsImport.Parse
+        Paths_hsimport
+    autogen-modules:
+        Paths_hsimport
+    cpp-options: -DCABAL
+    hs-source-dirs: lib
+    default-language: Haskell2010
+    ghc-options: -W
+    build-depends:
+        base -any,
+        cmdargs -any,
+        haskell-src-exts -any,
+        ilist -any,
+        microlens -any,
+        mtl -any,
+        text -any,
+        split -any,
+        attoparsec -any,
+        directory -any,
+        dyre -any
+
 executable hsimport
     main-is: Main.hs
     cpp-options: -DCABAL
     hs-source-dirs: exe
+    default-language: Haskell2010
     ghc-options: -W
-    ghc-prof-options: -fprof-auto -rtsopts
     build-depends:
         base >=3 && <5,
         hsimport -any
@@ -103,6 +106,7 @@ test-suite tests
     type: exitcode-stdio-1.0
     main-is: Main.hs
     hs-source-dirs: tests
+    default-language: Haskell2010
     ghc-options: -W
     build-depends:
         base >=3 && <5,
