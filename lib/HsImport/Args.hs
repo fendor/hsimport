@@ -15,28 +15,31 @@ import Paths_hsimport (version)
 #endif
 
 data HsImportArgs = HsImportArgs
-   { moduleName    :: String
-   , symbolName    :: String
-   , all           :: Bool
-   , with          :: [String]
-   , qualifiedName :: String
-   , as            :: String
-   , inputSrcFile  :: FilePath
-   , outputSrcFile :: FilePath
+   { moduleName     :: String
+   , symbolName     :: String
+   , hideSymbolName :: String
+   , all            :: Bool
+   , with           :: [String]
+   , qualifiedName  :: String
+   , as             :: String
+   , inputSrcFile   :: FilePath
+   , outputSrcFile  :: FilePath
    } deriving (Data, Typeable, Show, Eq)
 
 
 hsImportArgs :: IO HsImportArgs
 hsImportArgs = cmdArgs $ HsImportArgs
-   { moduleName    = def &= help "The module to import"
-   , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
-   , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
+   { moduleName     = def &= help "The module to import"
+   , symbolName     = def &= help "The symbol to import, if empty, the entire module is imported"
+   , hideSymbolName = def &= help "The symbol to hide when importing the module, if empty, no symbol is hidden"
+                         &= name "hide" &= name "e"
+   , all            = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
                          &= name "all" &= name "a"
-   , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
-   , qualifiedName = def &= help "The name to use for a qualified module import"
-   , as            = def &= help "The name to use for an unqualified module import" &= name "as"
-   , outputSrcFile = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile
-   , inputSrcFile  = def &= args &= typ "SOURCEFILE"
+   , with           = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
+   , qualifiedName  = def &= help "The name to use for a qualified module import"
+   , as             = def &= help "The name to use for an unqualified module import" &= name "as"
+   , outputSrcFile  = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile
+   , inputSrcFile   = def &= args &= typ "SOURCEFILE"
    }
    &= program "hsimport"
    &= summary summaryInfo
@@ -49,14 +52,15 @@ hsImportArgs = cmdArgs $ HsImportArgs
 
 defaultArgs :: HsImportArgs
 defaultArgs = HsImportArgs
-   { moduleName    = def
-   , symbolName    = def
-   , all           = def
-   , with          = def
-   , qualifiedName = def
-   , as            = def
-   , inputSrcFile  = def
-   , outputSrcFile = def
+   { moduleName     = def
+   , symbolName     = def
+   , hideSymbolName = def
+   , all            = def
+   , with           = def
+   , qualifiedName  = def
+   , as             = def
+   , inputSrcFile   = def
+   , outputSrcFile  = def
    }
 
 

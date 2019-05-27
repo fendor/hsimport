@@ -49,7 +49,9 @@ hsImportSpec args
 
       symbolImport =
          case Args.symbolName args of
-              ""  -> Nothing
+              ""  -> case Args.hideSymbolName args of
+                        "" -> Nothing
+                        name -> Just $ HideSymbol name
 
               name | Args.all args              -> Just $ AllOfSymbol name
                    | ws@(_:_) <- Args.with args -> Just $ SomeOfSymbol name ws
