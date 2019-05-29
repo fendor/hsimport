@@ -44,7 +44,7 @@ hsImportSpec args
    where
       module_ = ModuleImport { moduleName = Args.moduleName args
                              , qualified  = not . null $ Args.qualifiedName args
-                             , hide       = Args.hide args
+                             , hide       = Args.hiding args
                              , as         = find (/= "") [Args.qualifiedName args, Args.as args]
                              }
 
