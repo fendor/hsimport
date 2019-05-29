@@ -27,21 +27,17 @@ data ImportChange
 
 
 importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
-importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
+importChanges (ModuleImport moduleName False _ Nothing) Nothing hsModule =
    [ importModule moduleName hsModule ]
 
-importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule =
-   case symbolImport of
-      HideSymbol _ -> [ importModuleHidingSymbol moduleName symbolImport hsModule ]
-      _ -> [ importModuleWithSymbol moduleName symbolImport hsModule ]
+importChanges (ModuleImport moduleName False hide Nothing) (Just symbolImport) hsModule =
+   [ importModuleWithSymbol hide moduleName symbolImport hsModule ]
 
-importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
-   [ case symbolImport of
-         Just (HideSymbol _) -> maybe NoImportChange (\sym -> importModuleHidingSymbol moduleName sym hsModule) symbolImport
-         _ -> maybe NoImportChange (\sym -> importModuleWithSymbol moduleName sym hsModule) symbolImport
+importChanges (ModuleImport moduleName qualified hide as) symbolImport hsModule =
+   [ maybe NoImportChange (\sym -> importModuleWithSymbol hide moduleName sym hsModule) symbolImport
 
    , if qualified
-        then importQualifiedModule moduleName (maybe moduleName id as) hsModule
+        then importQualifiedModule moduleName (fromMaybe moduleName as) hsModule
         else maybe NoImportChange (\asName -> importModuleAs moduleName asName hsModule) as
    ]
 
@@ -61,57 +57,27 @@ importModule moduleName module_
            Just srcLine -> AddImportAfter srcLine (importDecl moduleName)
            Nothing      -> AddImportAtEnd (importDecl moduleName)
 
-importModuleHidingSymbol :: String -> SymbolImport -> Module -> ImportChange
-importModuleHidingSymbol moduleName symbolImport module_
-   | matching@(_ : _) <- matchingImports moduleName (importDecls module_)
-   = if any entireModuleImported matching
-         || any (symbolHidden symbolImport) matching
-      then NoImportChange
-      else case find hasHiddenSymbols matching of
-         Just impDecl -> ReplaceImportAt
-            (srcSpan . HS.ann $ impDecl)
-            (hideSymbol impDecl symbolImport)
-         Nothing ->
-            FindImportPos $ importDeclHidingSymbol moduleName symbolImport
-   | not $ null (importDecls module_)
-   = FindImportPos $ importDeclHidingSymbol moduleName symbolImport
-   | otherwise
-   = case srcLineForNewImport module_ of
-      Just srcLine ->
-         AddImportAfter srcLine (importDeclHidingSymbol moduleName symbolImport)
-      Nothing ->
-         AddImportAtEnd (importDeclHidingSymbol moduleName symbolImport)
- where
-  hideSymbol (importDecl@HS.ImportDecl { HS.importSpecs = specs }) symbolImport
-     = importDecl
-        { HS.importSpecs = specs & _Just %~ extendSpecList symbolImport
-        }
-
-  extendSpecList symbolImport (HS.ImportSpecList srcSpan h specs) =
-     HS.ImportSpecList srcSpan h (specs ++ [importSpec symbolImport])
-
-
-importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
-importModuleWithSymbol moduleName symbolImport module_
+importModuleWithSymbol :: Bool -> String -> SymbolImport -> Module -> ImportChange
+importModuleWithSymbol hiding moduleName symbolImport module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
-      if any entireModuleImported matching || any (symbolImported symbolImport) matching
+      if any entireModuleImported matching || any (symbolImported hiding symbolImport) matching
          then NoImportChange
-         else case find hasImportedSymbols matching of
+         else case find (hasSymbols hiding) matching of
                    Just impDecl ->
                       ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
 
                    Nothing      ->
-                      FindImportPos $ importDeclWithSymbol moduleName symbolImport
+                      FindImportPos $ importDeclWithSymbol hiding moduleName symbolImport
 
    | not $ null (importDecls module_) =
-      FindImportPos $ importDeclWithSymbol moduleName symbolImport
+      FindImportPos $ importDeclWithSymbol hiding moduleName symbolImport
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
-           Nothing      -> AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
+           Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol hiding moduleName symbolImport)
+           Nothing      -> AddImportAtEnd (importDeclWithSymbol hiding moduleName symbolImport)
    where
-      addSymbol (id@HS.ImportDecl {HS.importSpecs = specs}) symbolImport =
+      addSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
          id {HS.importSpecs = specs & _Just %~ extendSpecList symbolImport}
 
       extendSpecList symbolImport (HS.ImportSpecList srcSpan hid specs) =
@@ -175,26 +141,10 @@ hasAsImport asName import_
    | otherwise
    = False
 
-symbolHidden :: SymbolImport -> ImportDecl -> Bool
-symbolHidden symbolImport import_
-   | Just (HS.ImportSpecList _ True hsSymbols) <- HS.importSpecs import_
-   , any (imports symbolImport) hsSymbols
-   = True
-
-   | otherwise
-   = False
-   where
-      imports :: SymbolImport -> HS.ImportSpec l -> Bool
-      imports (HideSymbol symName)         (HS.IVar _ name)                  = symName == nameString name
-      imports _ _ = False
-
-      nameString (HS.Ident _ id)   = id
-      nameString (HS.Symbol _ sym) = sym
-
-symbolImported :: SymbolImport -> ImportDecl -> Bool
-symbolImported symbolImport import_
-   | Just (HS.ImportSpecList _ False hsSymbols) <- HS.importSpecs import_
-   , any (imports symbolImport) hsSymbols
+symbolImported :: Bool -> SymbolImport -> ImportDecl -> Bool
+symbolImported hide symbolImport import_
+   | Just (HS.ImportSpecList _ hidden hsSymbols) <- HS.importSpecs import_
+   , hidden == hide , any (imports symbolImport) hsSymbols
    = True
 
    | otherwise
@@ -217,17 +167,9 @@ symbolImported symbolImport import_
       toName (HS.VarName _ name) = name
       toName (HS.ConName _ name) = name
 
-hasHiddenSymbols :: ImportDecl -> Bool
-hasHiddenSymbols import_
-   | Just (HS.ImportSpecList _ True (_:_)) <- HS.importSpecs import_
-   = True
-
-   | otherwise
-   = False
-
-hasImportedSymbols :: ImportDecl -> Bool
-hasImportedSymbols import_
-   | Just (HS.ImportSpecList _ False (_:_)) <- HS.importSpecs import_
+hasSymbols :: Bool -> ImportDecl -> Bool
+hasSymbols hidden import_
+   | Just (HS.ImportSpecList _ hid (_:_)) <- HS.importSpecs import_, hid == hidden
    = True
 
    | otherwise
@@ -246,20 +188,12 @@ importDecl moduleName = HS.ImportDecl
    }
 
 
-importDeclWithSymbol :: String -> SymbolImport -> ImportDecl
-importDeclWithSymbol moduleName symbolImport =
+importDeclWithSymbol :: Bool -> String -> SymbolImport -> ImportDecl
+importDeclWithSymbol hiding moduleName symbolImport =
    (importDecl moduleName) { HS.importSpecs = Just (HS.ImportSpecList noAnnotation
-                                                                      False
+                                                                      hiding
                                                                       [importSpec symbolImport])
                            }
-
-importDeclHidingSymbol :: String -> SymbolImport -> ImportDecl
-importDeclHidingSymbol moduleName symbolImport =
-   (importDecl moduleName) { HS.importSpecs = Just (HS.ImportSpecList noAnnotation
-                                                                      True
-                                                                      [importSpec symbolImport])
-                           }
-
 
 qualifiedImportDecl :: String -> String -> ImportDecl
 qualifiedImportDecl moduleName qualifiedName =
@@ -283,8 +217,6 @@ importSpec (AllOfSymbol symName)        = HS.IThingAll noAnnotation (hsName symN
 importSpec (SomeOfSymbol symName names) = HS.IThingWith noAnnotation
                                                         (hsName symName)
                                                         (map (HS.VarName noAnnotation . hsName) names)
-importSpec (HideSymbol symName)         = HS.IVar noAnnotation (hsName symName)
-
 
 hsName :: String -> Name
 hsName symbolName

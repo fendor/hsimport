@@ -44,14 +44,13 @@ hsImportSpec args
    where
       module_ = ModuleImport { moduleName = Args.moduleName args
                              , qualified  = not . null $ Args.qualifiedName args
+                             , hide       = Args.hide args
                              , as         = find (/= "") [Args.qualifiedName args, Args.as args]
                              }
 
       symbolImport =
          case Args.symbolName args of
-              ""  -> case Args.hideSymbolName args of
-                        "" -> Nothing
-                        name -> Just $ HideSymbol name
+              ""  -> Nothing
 
               name | Args.all args              -> Just $ AllOfSymbol name
                    | ws@(_:_) <- Args.with args -> Just $ SomeOfSymbol name ws
