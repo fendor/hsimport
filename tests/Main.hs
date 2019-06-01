@@ -94,6 +94,14 @@ symbolTests = testGroup "Symbol Tests"
    , configTest "SymbolTest30" (HI.defaultConfig { HI.prettyPrint = prettyPrint }) (HI.defaultArgs { HI.moduleName = "X.Y", HI.symbolName = "x" })
    , test "SymbolTest31" $ HI.defaultArgs { HI.moduleName = "Ugah.Blub", HI.symbolName = "d" }
    , test "SymbolTest32" $ HI.defaultArgs { HI.moduleName = "Control.Foo", HI.symbolName = "foo" }
+   , test "SymbolTest33" $ HI.defaultArgs { HI.moduleName = "Control.Monad", HI.symbolName = "mapM_", HI.hiding = True }
+   , test "SymbolTest34" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isPrefixOf", HI.hiding = True }
+   , test "SymbolTest35" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf", HI.hiding = True }
+   , test "SymbolTest36" $ HI.defaultArgs { HI.qualifiedName = "T", HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf", HI.hiding = True }
+   , test "SymbolTest37" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.hiding = True }
+   , test "SymbolTest38" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A", "B", "C"], HI.hiding = True }
+   , test "SymbolTest39" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.as = "T", HI.hiding = True }
+   , test "SymbolTest40" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A", "B", "C"], HI.as = "T", HI.hiding = True }
    ]
 
 

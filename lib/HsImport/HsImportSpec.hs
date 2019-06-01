@@ -9,7 +9,7 @@ import qualified Language.Haskell.Exts as HS
 import qualified HsImport.Args as Args
 import HsImport.Args (HsImportArgs)
 import HsImport.Parse (parseFile)
-import HsImport.SymbolImport (SymbolImport(..))
+import HsImport.SymbolImport (SymbolImport(..), Symbol(..))
 import HsImport.ModuleImport
 import HsImport.Types
 import Data.List (find)
@@ -47,13 +47,15 @@ hsImportSpec args
                              , as         = find (/= "") [Args.qualifiedName args, Args.as args]
                              }
 
+      constructor = if Args.hiding args then Hiding else Import
+
       symbolImport =
          case Args.symbolName args of
               ""  -> Nothing
 
-              name | Args.all args              -> Just $ AllOfSymbol name
-                   | ws@(_:_) <- Args.with args -> Just $ SomeOfSymbol name ws
-                   | otherwise                  -> Just $ Symbol name
+              name | Args.all args              -> Just $ constructor $ AllOf name
+                   | ws@(_:_) <- Args.with args -> Just $ constructor $ SomeOf name ws
+                   | otherwise                  -> Just $ constructor $ Only name
 
       saveToFile =
          case Args.outputSrcFile args of

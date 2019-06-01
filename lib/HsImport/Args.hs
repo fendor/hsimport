@@ -17,6 +17,7 @@ import Paths_hsimport (version)
 data HsImportArgs = HsImportArgs
    { moduleName    :: String
    , symbolName    :: String
+   , hiding        :: Bool
    , all           :: Bool
    , with          :: [String]
    , qualifiedName :: String
@@ -30,6 +31,8 @@ hsImportArgs :: IO HsImportArgs
 hsImportArgs = cmdArgs $ HsImportArgs
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
+   , hiding        = def &= help "Hide the given symbols in the import. Toggles whether to hide the given symbols or to use an import list"
+                         &= name "hiding" &= name "H"
    , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
                          &= name "all" &= name "a"
    , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
@@ -51,6 +54,7 @@ defaultArgs :: HsImportArgs
 defaultArgs = HsImportArgs
    { moduleName    = def
    , symbolName    = def
+   , hiding        = def
    , all           = def
    , with          = def
    , qualifiedName = def
