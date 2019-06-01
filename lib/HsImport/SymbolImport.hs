@@ -2,7 +2,7 @@
 module HsImport.SymbolImport
    ( SymbolImport(..)
    , Symbol(..)
-   , getSymbol
+   , symbol
    , isSymbolImportHidden
    )
 where
@@ -22,9 +22,9 @@ data SymbolImport
    | Hiding Symbol
    deriving (Show)
 
-getSymbol :: SymbolImport -> Symbol
-getSymbol (Hiding s) = s
-getSymbol (Import s) = s
+symbol :: SymbolImport -> Symbol
+symbol (Hiding s) = s
+symbol (Import s) = s
 
 isSymbolImportHidden :: SymbolImport -> Bool
 isSymbolImportHidden (Hiding _) = True

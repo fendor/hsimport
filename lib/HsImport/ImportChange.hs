@@ -10,7 +10,7 @@ import Data.List (find, (\\))
 import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
-import HsImport.SymbolImport (SymbolImport(..), Symbol(..), getSymbol, isSymbolImportHidden)
+import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isSymbolImportHidden)
 import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
@@ -64,7 +64,7 @@ importModuleWithSymbol moduleName symbolImport module_
          then NoImportChange
          else case find (hasSymbols symbolImport) matching of
                    Just impDecl ->
-                      ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl (getSymbol symbolImport))
+                      ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl (symbol symbolImport))
 
                    Nothing      ->
                       FindImportPos $ importDeclWithSymbol moduleName symbolImport
@@ -145,7 +145,7 @@ symbolImported :: SymbolImport -> ImportDecl -> Bool
 symbolImported symbolImport import_
    | Just (HS.ImportSpecList _ hidden hsSymbols) <- HS.importSpecs import_
    , hidden == isSymbolImportHidden symbolImport
-   , any (imports $ getSymbol symbolImport) hsSymbols
+   , any (imports $ symbol symbolImport) hsSymbols
    = True
 
    | otherwise
