@@ -10,7 +10,7 @@ import Data.List (find, (\\))
 import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
-import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isSymbolImportHidden)
+import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isHiding)
 import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
@@ -144,7 +144,7 @@ hasAsImport asName import_
 symbolImported :: SymbolImport -> ImportDecl -> Bool
 symbolImported symbolImport import_
    | Just (HS.ImportSpecList _ hidden hsSymbols) <- HS.importSpecs import_
-   , hidden == isSymbolImportHidden symbolImport
+   , hidden == isHiding symbolImport
    , any (imports $ symbol symbolImport) hsSymbols
    = True
 
@@ -172,7 +172,7 @@ symbolImported symbolImport import_
 hasSymbols :: SymbolImport -> ImportDecl -> Bool
 hasSymbols symbolImport import_
    | Just (HS.ImportSpecList _ hid (_:_)) <- HS.importSpecs import_
-   , hid == isSymbolImportHidden symbolImport
+   , hid == isHiding symbolImport
    = True
 
    | otherwise

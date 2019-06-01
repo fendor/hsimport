@@ -3,7 +3,7 @@ module HsImport.SymbolImport
    ( SymbolImport(..)
    , Symbol(..)
    , symbol
-   , isSymbolImportHidden
+   , isHiding
    )
 where
 
@@ -26,6 +26,6 @@ symbol :: SymbolImport -> Symbol
 symbol (Hiding s) = s
 symbol (Import s) = s
 
-isSymbolImportHidden :: SymbolImport -> Bool
-isSymbolImportHidden (Hiding _) = True
-isSymbolImportHidden (Import _) = False
+isHiding :: SymbolImport -> Bool
+isHiding (Hiding _) = True
+isHiding (Import _) = False
