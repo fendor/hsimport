@@ -31,11 +31,11 @@ hsImportArgs :: IO HsImportArgs
 hsImportArgs = cmdArgs $ HsImportArgs
    { moduleName    = def &= help "The module to import"
    , symbolName    = def &= help "The symbol to import, if empty, the entire module is imported"
-   , hiding        = def &= help "Hide the given symbols in the import. Toggles whether to hide the given symbols or to use an import list"
+   , hiding        = def &= help "Hide the given symbols from the import"
                          &= name "hiding" &= name "H"
    , all           = def &= help "All constructors or methods of the symbol should be imported: 'Symbol(..)'"
                          &= name "all" &= name "a"
-   , with          = def &= help "The constructors or methods of the symbol should be imported: 'Symbol(With)'"
+   , with          = def &= help "Which constructors or methods of the symbol should be imported: 'Symbol(With)'"
    , qualifiedName = def &= help "The name to use for a qualified module import"
    , as            = def &= help "The name to use for an unqualified module import" &= name "as"
    , outputSrcFile = def &= help "Save modified source file to file, if empty, the source file is modified inplace" &= typFile

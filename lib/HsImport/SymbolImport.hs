@@ -9,17 +9,18 @@ where
 
 type Name = String
 
--- | What of the symbol should be imported.
+-- | What of the symbol should be taken.
 data Symbol
-   = Only Name            -- ^ only the symbol should be imported
-   | AllOf Name           -- ^ all constructors or methods of the symbol should be imported: Symbol(..)
-   | SomeOf Name [String] -- ^ some constructors or methods of the symbol should be imported: Symbol(X, Y)
+   = Only Name            -- ^ only the symbol should be taken
+   | AllOf Name           -- ^ all constructors or methods of the symbol should be taken: Symbol(..)
+   | SomeOf Name [String] -- ^ some constructors or methods of the symbol should be taken: Symbol(X, Y)
    deriving (Show)
 
 
+-- | The imported or from the import hidden symbol.
 data SymbolImport
-   = Import Symbol
-   | Hiding Symbol
+   = Import Symbol -- ^ the symbol to import
+   | Hiding Symbol -- ^ the symbol to hide from the import
    deriving (Show)
 
 symbol :: SymbolImport -> Symbol
