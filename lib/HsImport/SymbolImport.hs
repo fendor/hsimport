@@ -4,6 +4,7 @@ module HsImport.SymbolImport
    , Symbol(..)
    , symbol
    , isHiding
+   , swapImport
    )
 where
 
@@ -23,10 +24,18 @@ data SymbolImport
    | Hiding Symbol -- ^ the symbol to hide from the import
    deriving (Show)
 
+-- | Retrieve the symbol out of the symbol import
 symbol :: SymbolImport -> Symbol
 symbol (Hiding s) = s
 symbol (Import s) = s
 
+-- | Check whether this symbol import is meant to hide a symbol.
 isHiding :: SymbolImport -> Bool
 isHiding (Hiding _) = True
 isHiding (Import _) = False
+
+-- | Swap the import style from hiding to import list and vice versa.
+swapImport :: SymbolImport -> SymbolImport
+swapImport (Hiding s) = Import s
+swapImport (Import s) = Hiding s
+

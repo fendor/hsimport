@@ -7,10 +7,11 @@ module HsImport.ImportChange
 
 import Data.Maybe
 import Data.List (find, (\\))
+import Control.Monad (join)
 import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
-import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isHiding)
+import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isHiding, swapImport)
 import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
@@ -58,17 +59,35 @@ importModule moduleName module_
            Nothing      -> AddImportAtEnd (importDecl moduleName)
 
 
+existingMatching :: [ImportDecl] -> String -> SymbolImport -> ImportChange
+existingMatching matching moduleName symbolImport
+   | Just impDecl <- find hasEntireModuleImported matching =
+      if isHiding symbolImport
+         then
+            ReplaceImportAt (srcSpan . HS.ann $ impDecl) (setSymbol impDecl symbolImport)
+
+         else
+            NoImportChange
+
+   | any (hasSymbols symbolImport) matching =
+      NoImportChange
+   | otherwise =
+      case find (hasAnySymbols $ isHiding symbolImport) matching of
+         Just impDecl ->
+            ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
+
+         Nothing      ->
+            case find (hasSymbols (swapImport symbolImport)) matching of
+               Just impDecl ->
+                  ReplaceImportAt (srcSpan . HS.ann $ impDecl) (removeSymbol impDecl symbolImport)
+
+               Nothing ->
+                  FindImportPos $ importDeclWithSymbol moduleName symbolImport
+
 importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
 importModuleWithSymbol moduleName symbolImport module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
-      if any hasEntireModuleImported matching || any (hasSymbols symbolImport) matching
-         then NoImportChange
-         else case find (hasAnySymbols $ isHiding symbolImport) matching of
-                   Just impDecl ->
-                      ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl (symbol symbolImport))
-
-                   Nothing      ->
-                      FindImportPos $ importDeclWithSymbol moduleName symbolImport
+      existingMatching matching moduleName symbolImport
 
    | not $ null (importDecls module_) =
       FindImportPos $ importDeclWithSymbol moduleName symbolImport
@@ -77,12 +96,35 @@ importModuleWithSymbol moduleName symbolImport module_
       case srcLineForNewImport module_ of
            Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
            Nothing      -> AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
-   where
-      addSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
-         id {HS.importSpecs = specs & _Just %~ extendSpecList symbolImport}
 
-      extendSpecList symbolImport (HS.ImportSpecList srcSpan hid specs) =
-         HS.ImportSpecList srcSpan hid (specs ++ [importSpec symbolImport])
+extendSpecList :: SymbolImport -> HS.ImportSpecList Annotation -> HS.ImportSpecList Annotation
+extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
+   HS.ImportSpecList annotation hid (specs ++ [importSpec $ symbol symbolImport])
+
+removeSpecList :: SymbolImport -> HS.ImportSpecList Annotation -> Maybe (HS.ImportSpecList Annotation)
+removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
+   let
+      specListRemovedSymbol = filter (not . imports (symbol symbolImport)) specs
+   in
+   if null specListRemovedSymbol
+      then Nothing -- ^ Remove the spec list if it is empty now
+      else Just $ HS.ImportSpecList annotation hid specListRemovedSymbol
+
+setSpecList :: SymbolImport -> Annotation -> HS.ImportSpecList Annotation
+setSpecList symbolImport annotation =
+   HS.ImportSpecList annotation (isHiding symbolImport) [importSpec $ symbol symbolImport]
+
+addSymbol :: ImportDecl -> SymbolImport -> ImportDecl
+addSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
+   id {HS.importSpecs = specs & _Just %~ extendSpecList symbolImport}
+
+setSymbol :: ImportDecl -> SymbolImport -> ImportDecl
+setSymbol id@HS.ImportDecl {HS.importAnn = importAnn } symbolImport =
+   id {HS.importSpecs = Just (setSpecList symbolImport importAnn) }
+
+removeSymbol :: ImportDecl -> SymbolImport -> ImportDecl
+removeSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
+   id {HS.importSpecs = join (specs & _Just %~ removeSpecList symbolImport) }
 
 
 importQualifiedModule :: String -> String -> Module -> ImportChange
@@ -142,7 +184,7 @@ hasAsImport asName import_
    | otherwise
    = False
 
-
+-- | Checks whether the given SymbolImport is already covered by the current ImportDecl.
 hasSymbols :: SymbolImport -> ImportDecl -> Bool
 hasSymbols symbolImport import_
    | Just (HS.ImportSpecList _ hidden hsSymbols) <- HS.importSpecs import_
@@ -153,18 +195,21 @@ hasSymbols symbolImport import_
    | otherwise
    = False
 
+-- | Checks whether the given symbol is mentioned by the import spec.
+imports :: Symbol -> ImportSpec -> Bool
+imports = imports_
    where
-      imports (Only symName)         (HS.IVar _ name)                    = symName == nameString name
-      imports (Only symName)         (HS.IAbs _ _ name)                  = symName == nameString name
-      imports (Only symName)         (HS.IThingAll _ name)               = symName == nameString name
-      imports (Only symName)         (HS.IThingWith _ name _)            = symName == nameString name
-      imports (AllOf symName)        (HS.IThingAll _ name)               = symName == nameString name
-      imports (SomeOf symName _    ) (HS.IThingAll _ name)               = symName == nameString name
-      imports (SomeOf symName names) (HS.IThingWith _ hsSymName hsNames) =
+      imports_ :: Symbol -> ImportSpec -> Bool
+      imports_ (Only symName)         (HS.IVar _ name)                    = symName == nameString name
+      imports_ (Only symName)         (HS.IAbs _ _ name)                  = symName == nameString name
+      imports_ (Only symName)         (HS.IThingAll _ name)               = symName == nameString name
+      imports_ (Only symName)         (HS.IThingWith _ name _)            = symName == nameString name
+      imports_ (AllOf symName)        (HS.IThingAll _ name)               = symName == nameString name
+      imports_ (SomeOf symName _    ) (HS.IThingAll _ name)               = symName == nameString name
+      imports_ (SomeOf symName names) (HS.IThingWith _ hsSymName hsNames) =
          symName == nameString hsSymName && null (names \\ (map (nameString . toName) hsNames))
 
-      imports _ _ = False
-
+      imports_ _ _ = False
       nameString (HS.Ident _ id)   = id
       nameString (HS.Symbol _ sym) = sym
 
