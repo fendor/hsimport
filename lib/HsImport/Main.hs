@@ -52,17 +52,20 @@ hsimportWithArgs config args = do
    maybeSpec <- hsImportSpec args
    case maybeSpec of
         Left  error -> return $ Just error
-        Right spec  -> hsimportWithSpec config spec >> return Nothing
+        Right spec  -> hsimportWithSpec config spec
 
 
-hsimportWithSpec :: Config -> HsImportSpec -> IO ()
+hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe Error)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
-   let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
-
-   srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
-   let srcLines' = applyChanges srcLines impChanges
-   when (srcLines' /= srcLines || isJust (saveToFile spec)) $
-      TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+   let impChangesM = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
+   case impChangesM of
+      Left err -> return (Just err)
+      Right impChanges -> do
+         srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
+         let srcLines' = applyChanges srcLines impChanges
+         when (srcLines' /= srcLines || isJust (saveToFile spec)) $
+            TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+         return Nothing
 
    where
       applyChanges = foldl' applyChange

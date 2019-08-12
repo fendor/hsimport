@@ -1,4 +1,5 @@
-{-# Language PatternGuards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternGuards #-}
 
 module HsImport.ImportChange
    ( ImportChange(..)
@@ -7,7 +8,6 @@ module HsImport.ImportChange
 
 import Data.Maybe
 import Data.List (find, (\\))
-import Control.Monad (join)
 import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
@@ -27,20 +27,27 @@ data ImportChange
    deriving (Show)
 
 
-importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
+importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> Either Error [ImportChange]
 importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
-   [ importModule moduleName hsModule ]
+   Right [importModule moduleName hsModule]
 
-importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule =
-   [ importModuleWithSymbol moduleName symbolImport hsModule ]
+importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule
+   = sequenceA [importModuleWithSymbol moduleName symbolImport hsModule]
 
 importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
-   [ maybe NoImportChange (\sym -> importModuleWithSymbol moduleName sym hsModule) symbolImport
-
-   , if qualified
-        then importQualifiedModule moduleName (fromMaybe moduleName as) hsModule
-        else maybe NoImportChange (\asName -> importModuleAs moduleName asName hsModule) as
-   ]
+   sequenceA
+      [ maybe (Right NoImportChange)
+              (\sym -> importModuleWithSymbol moduleName sym hsModule)
+              symbolImport
+      , if qualified
+         then Right $ importQualifiedModule moduleName
+                                            (fromMaybe moduleName as)
+                                            hsModule
+         else Right $ maybe
+            NoImportChange
+            (\asName -> importModuleAs moduleName asName hsModule)
+            as
+      ]
 
 
 importModule :: String -> Module -> ImportChange
@@ -59,27 +66,27 @@ importModule moduleName module_
            Nothing      -> AddImportAtEnd (importDecl moduleName)
 
 
-existingMatching :: [ImportDecl] -> String -> SymbolImport -> ImportChange
+existingMatching :: [ImportDecl] -> String -> SymbolImport -> Either Error ImportChange
 existingMatching matching moduleName symbolImport
    | Just impDecl <- find hasEntireModuleImported matching =
       -- There is a module import
       if isHiding symbolImport
          then
             -- We add a hiding clause, since we only want to hide a very specific symbol.
-            ReplaceImportAt (srcSpan . HS.ann $ impDecl) (setSymbol impDecl symbolImport)
+            Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) (setSymbol impDecl symbolImport)
 
          else
             -- If we want to import a symbol, we dont have to, since it is already imported.
-            NoImportChange
+            Right $ NoImportChange
 
    | any (hasSymbols symbolImport) matching =
       -- The symbol we want to import/hide is already imported/hidden.
-      NoImportChange
+      Right $ NoImportChange
    | otherwise =
       case find (hasAnySymbols $ isHiding symbolImport) matching of
          Just impDecl ->
             -- There is a fitting import declaration to which we can add the symbol to.
-            ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
+            Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
 
          Nothing      ->
             -- The symbol is either not imported/hidden or another import
@@ -87,27 +94,28 @@ existingMatching matching moduleName symbolImport
             -- If something explictly imports the symbol, we remove it from the import list.
             -- If something explictly hides the symbol, we remove it from the hiding list.
             case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
-               Just impDecl ->
+               Just impDecl -> do
                   -- There is a import declaration that imports/hides the symbol we want to hide/import.
-                  ReplaceImportAt (srcSpan . HS.ann $ impDecl) (removeSymbol impDecl symbolImport)
+                  symbolList <- removeSymbol impDecl symbolImport
+                  Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) symbolList
 
                Nothing ->
                   -- Symbol is not mentioned at all.
-                  FindImportPos $ importDeclWithSymbol moduleName symbolImport
+                  Right $ FindImportPos $ importDeclWithSymbol moduleName symbolImport
 
-importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
+importModuleWithSymbol :: String -> SymbolImport -> Module -> Either Error ImportChange
 importModuleWithSymbol moduleName symbolImport module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       -- There is already a matching import line
       existingMatching matching moduleName symbolImport
 
    | not $ null (importDecls module_) =
-      FindImportPos $ importDeclWithSymbol moduleName symbolImport
+      Right $ FindImportPos $ importDeclWithSymbol moduleName symbolImport
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
-           Nothing      -> AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
+           Just srcLine -> Right $ AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
+           Nothing      -> Right $ AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
 
 -- | Extend the spec list with the given symbol.
 -- Might result in duplciates.
@@ -122,36 +130,37 @@ extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
 removeSpecList
    :: SymbolImport
    -> HS.ImportSpecList Annotation
-   -> Maybe (HS.ImportSpecList Annotation)
+   -> Either Error (Maybe (HS.ImportSpecList Annotation))
 removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
    let specListRemovedSymbol =
-             mapMaybe (removeSymbols (symbol symbolImport)) specs
-   in  if null specListRemovedSymbol
-          then Nothing -- Remove the spec list if it is empty now
-          else Just $ HS.ImportSpecList annotation hid specListRemovedSymbol
+             traverse (removeSymbols (symbol symbolImport)) specs
+   in specListRemovedSymbol >>= \specList ->
+      if null (catMaybes specList)
+          then Right Nothing -- Remove the spec list if it is empty now
+          else Right $ Just $ HS.ImportSpecList annotation hid (catMaybes specList)
 
  where
-  removeSymbols :: Symbol -> ImportSpec -> Maybe ImportSpec
+  removeSymbols :: Symbol -> ImportSpec -> Either Error (Maybe ImportSpec)
   removeSymbols (SomeOf symName _) t@(HS.IThingAll _ name) =
      if symName == nameString name
-        then Nothing -- TODO: hard error
-        else Just t
+        then Left "Terrible error"
+        else Right $ Just t
 
   removeSymbols (SomeOf symName names) t@(HS.IThingWith a hsSymName hsNames) =
      if symName == nameString hsSymName
-        then Just (HS.IThingWith a hsSymName (removeFromList names hsNames))
-        else Just t
+        then Right $ Just (HS.IThingWith a hsSymName (removeFromList names hsNames))
+        else Right $ Just t
 
   removeSymbols (AllOf symName) t@(HS.IThingWith a hsSymName _) =
       if symName == nameString hsSymName
          -- Remove all used constructors
-         then Just (HS.IThingWith a hsSymName [])
-         else Just t
+         then Right $ Just (HS.IThingWith a hsSymName [])
+         else Right $ Just t
 
   removeSymbols sym spec =
       if imports sym spec
-         then Nothing
-         else Just spec
+         then Right $ Nothing
+         else Right $ Just spec
 
   removeFromList :: [String] -> [CName] -> [CName]
   removeFromList names = filter ((`notElem` names) . nameString . toName)
@@ -175,9 +184,11 @@ setSymbol id@HS.ImportDecl {HS.importAnn = importAnn } symbolImport =
 
 -- | Remove a symbol from the import declaration.
 -- May remove the whole spec list if the list is empty after removal.
-removeSymbol :: ImportDecl -> SymbolImport -> ImportDecl
+removeSymbol :: ImportDecl -> SymbolImport -> Either Error ImportDecl
 removeSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
-   id {HS.importSpecs = join (specs & _Just %~ removeSpecList symbolImport) }
+   case specs & _Just %~ removeSpecList symbolImport of
+      Nothing -> Right id {HS.importSpecs = Nothing }
+      Just xs -> xs >>= \newSpecList -> Right id {HS.importSpecs = newSpecList}
 
 
 importQualifiedModule :: String -> String -> Module -> ImportChange
