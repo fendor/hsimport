@@ -86,13 +86,13 @@ existingMatching matching moduleName symbolImport
             -- hides/imports it.
             -- If something explictly imports the symbol, we remove it from the import list.
             -- If something explictly hides the symbol, we remove it from the hiding list.
-            case find (hasSymbols (swapImport symbolImport)) matching of
+            case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
                Just impDecl ->
                   -- There is a import declaration that imports/hides the symbol we want to hide/import.
                   ReplaceImportAt (srcSpan . HS.ann $ impDecl) (removeSymbol impDecl symbolImport)
 
                Nothing ->
-                  -- Module is not imported at all.
+                  -- Symbol is not mentioned at all.
                   FindImportPos $ importDeclWithSymbol moduleName symbolImport
 
 importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
@@ -118,14 +118,44 @@ extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
 -- | Remove an element from the import list if it matches the symbol.
 -- If the resulting spec list is empty afterwards, Nothing is returned to remove
 -- the import list.
-removeSpecList :: SymbolImport -> HS.ImportSpecList Annotation -> Maybe (HS.ImportSpecList Annotation)
+-- Removes duplicate imports.
+removeSpecList
+   :: SymbolImport
+   -> HS.ImportSpecList Annotation
+   -> Maybe (HS.ImportSpecList Annotation)
 removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
-   let
-      specListRemovedSymbol = filter (not . imports (symbol symbolImport)) specs
-   in
-   if null specListRemovedSymbol
-      then Nothing -- Remove the spec list if it is empty now
-      else Just $ HS.ImportSpecList annotation hid specListRemovedSymbol
+   let specListRemovedSymbol =
+             mapMaybe (removeSymbols (symbol symbolImport)) specs
+   in  if null specListRemovedSymbol
+          then Nothing -- Remove the spec list if it is empty now
+          else Just $ HS.ImportSpecList annotation hid specListRemovedSymbol
+
+ where
+  removeSymbols :: Symbol -> ImportSpec -> Maybe ImportSpec
+  removeSymbols (SomeOf symName _) t@(HS.IThingAll _ name) =
+     if symName == nameString name
+        then Nothing -- TODO: hard error
+        else Just t
+
+  removeSymbols (SomeOf symName names) t@(HS.IThingWith a hsSymName hsNames) =
+     if symName == nameString hsSymName
+        then Just (HS.IThingWith a hsSymName (removeFromList names hsNames))
+        else Just t
+
+  removeSymbols (AllOf symName) t@(HS.IThingWith a hsSymName _) =
+      if symName == nameString hsSymName
+         -- Remove all used constructors
+         then Just (HS.IThingWith a hsSymName [])
+         else Just t
+
+  removeSymbols sym spec =
+      if imports sym spec
+         then Nothing
+         else Just spec
+
+  removeFromList :: [String] -> [CName] -> [CName]
+  removeFromList names = filter ((`notElem` names) . nameString . toName)
+
 
 -- | Set the spec list to the given symbol.
 setSpecList :: SymbolImport -> Annotation -> HS.ImportSpecList Annotation
@@ -207,6 +237,18 @@ hasAsImport asName import_
    | otherwise
    = False
 
+-- | Checks whether the given symbol is somehow mentioned in the import spec.
+-- Mainly used to check for constructor overlaps.
+hasSymbolsOverlap :: SymbolImport -> ImportDecl -> Bool
+hasSymbolsOverlap symbolImport import_
+   | Just (HS.ImportSpecList _ hidden hsSymbols) <- HS.importSpecs import_
+   , hidden == isHiding symbolImport
+   , any (importsOverlap $ symbol symbolImport) hsSymbols
+   = True
+
+   | otherwise
+   = False
+
 -- | Checks whether the given SymbolImport is already covered by the current ImportDecl.
 hasSymbols :: SymbolImport -> ImportDecl -> Bool
 hasSymbols symbolImport import_
@@ -218,7 +260,18 @@ hasSymbols symbolImport import_
    | otherwise
    = False
 
--- | Checks whether the given symbol is mentioned by the import spec.
+-- | Checks whether the given symbol is somehow mentioned in the import spec.
+-- Mainly used to check for constructor overlaps.
+importsOverlap :: Symbol -> ImportSpec -> Bool
+importsOverlap (AllOf symName) (HS.IThingWith _ name _) =
+   symName == nameString name
+importsOverlap (SomeOf symName _) (HS.IThingAll _ name) =
+   symName == nameString name
+importsOverlap (SomeOf symName _) (HS.IThingWith _ name _) =
+      symName == nameString name
+importsOverlap sym spec = imports sym spec
+
+-- | Checks whether the given symbol is completely covered by the import spec.
 imports :: Symbol -> ImportSpec -> Bool
 imports = imports_
    where
@@ -233,11 +286,14 @@ imports = imports_
          symName == nameString hsSymName && null (names \\ (map (nameString . toName) hsNames))
 
       imports_ _ _ = False
-      nameString (HS.Ident _ id)   = id
-      nameString (HS.Symbol _ sym) = sym
 
-      toName (HS.VarName _ name) = name
-      toName (HS.ConName _ name) = name
+nameString :: Name -> String
+nameString (HS.Ident _ id)   = id
+nameString (HS.Symbol _ sym) = sym
+
+toName :: CName -> Name
+toName (HS.VarName _ name) = name
+toName (HS.ConName _ name) = name
 
 
 hasAnySymbols :: Bool -> ImportDecl -> Bool

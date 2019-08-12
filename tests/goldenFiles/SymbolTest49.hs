@@ -11,7 +11,7 @@ import Ugah.Blub
    , b
    , c
    )
-import Data.Text (Text(B))
+import Data.Text
 f :: Int -> Int
 f = (+ 3)
 

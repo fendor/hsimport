@@ -11,8 +11,7 @@ import Ugah.Blub
    , b
    , c
    )
-import Data.Text (Text(A, B))
-import Data.Text hiding (Text(..))
+import Data.Text (Text())
 f :: Int -> Int
 f = (+ 3)
 

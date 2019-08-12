@@ -12,6 +12,7 @@ type Decl        = HS.Decl Annotation
 type ImportDecl  = HS.ImportDecl Annotation
 type ImportSpec  = HS.ImportSpec Annotation
 type Name        = HS.Name Annotation
+type CName       = HS.CName Annotation
 type Module      = HS.Module Annotation
 type ModuleName  = String
 type Error       = String

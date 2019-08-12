@@ -110,6 +110,9 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest46" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
    , test "SymbolTest47" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.hiding = True }
    , test "SymbolTest48" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf" }
+   , test "SymbolTest49" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.hiding = True }
+   , test "SymbolTest50" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["B", "C"], HI.hiding = True }
+   , test "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
    ]
 
 
