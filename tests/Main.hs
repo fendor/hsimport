@@ -113,6 +113,7 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest49" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.hiding = True }
    , test "SymbolTest50" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["B", "C"], HI.hiding = True }
    , test "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
+   , test "SymbolTest52" $ HI.defaultArgs { HI.moduleName = "Data.Text" }
    ]
 
 
