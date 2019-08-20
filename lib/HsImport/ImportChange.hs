@@ -134,16 +134,21 @@ removeSpecList
 removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
    let specListRemovedSymbol =
              traverse (removeSymbols (symbol symbolImport)) specs
-   in specListRemovedSymbol >>= \specList ->
-      if null (catMaybes specList)
+   in  specListRemovedSymbol >>= \specList -> if null (catMaybes specList)
           then Right Nothing -- Remove the spec list if it is empty now
-          else Right $ Just $ HS.ImportSpecList annotation hid (catMaybes specList)
+          else Right $ Just $ HS.ImportSpecList annotation
+                                                hid
+                                                (catMaybes specList)
 
  where
   removeSymbols :: Symbol -> ImportSpec -> Either Error (Maybe ImportSpec)
   removeSymbols (SomeOf symName _) t@(HS.IThingAll _ name) =
      if symName == nameString name
-        then Left "Terrible error"
+        then Left $ unlines
+           [ "Tried to remove Constructors from a Type that exposed all constructors."
+           , "This does not work because other Constructors are not available for HsImport."
+           , "Thus, this operation can not be performed."
+           ]
         else Right $ Just t
 
   removeSymbols (SomeOf symName names) t@(HS.IThingWith a hsSymName hsNames) =
