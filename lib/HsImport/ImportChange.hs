@@ -49,13 +49,30 @@ importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
             as
       ]
 
+-- | Checks whether the given import declaration is unqualified and
+-- contains an import spec list.
+-- Useful to replace an existing import declaration that has imports,
+-- with a more general import.
+isUnqualifiedWithSpecList :: ImportDecl -> Bool
+isUnqualifiedWithSpecList decl
+   | Just (HS.ImportSpecList _ False _) <- HS.importSpecs decl
+   , not (HS.importQualified decl)
+   = True
+   | otherwise
+   = False
 
 importModule :: String -> Module -> ImportChange
 importModule moduleName module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       if any hasEntireModuleImported matching
          then NoImportChange
-         else FindImportPos $ importDecl moduleName
+         else case find isUnqualifiedWithSpecList matching of
+            Just impDecl ->
+               ReplaceImportAt
+                  (srcSpan . HS.ann $ impDecl)
+                  impDecl { HS.importSpecs = Nothing }
+
+            Nothing -> FindImportPos $ importDecl moduleName
 
    | not $ null (importDecls module_) =
       FindImportPos $ importDecl moduleName

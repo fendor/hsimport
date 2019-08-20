@@ -56,6 +56,7 @@ moduleTests = testGroup "Module Tests"
    , test "ModuleTest35" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest36" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest37" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest38" $ HI.defaultArgs { HI.moduleName = "Data.Text" }
    ]
 
 
@@ -113,7 +114,6 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest49" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.hiding = True }
    , test "SymbolTest50" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["B", "C"], HI.hiding = True }
    , test "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
-   , test "SymbolTest52" $ HI.defaultArgs { HI.moduleName = "Data.Text" }
    ]
 
 
