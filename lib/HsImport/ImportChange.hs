@@ -24,30 +24,27 @@ data ImportChange
    | AddImportAtEnd ImportDecl          -- ^ add import declaration at end of source file
    | FindImportPos ImportDecl           -- ^ search for an insert position for the import declaration
    | NoImportChange                     -- ^ no changes of the import declarations
+   | ImportError Error                  -- ^ Some import change would cause an incosistent result
+                                        -- ^ thus, report the error. Other changes should not be applied.
    deriving (Show)
 
-
-importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> Either Error [ImportChange]
+importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
 importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
-   Right [importModule moduleName hsModule]
+   [importModule moduleName hsModule]
 
-importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule
-   = sequenceA [importModuleWithSymbol moduleName symbolImport hsModule]
+importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule =
+   [importModuleWithSymbol moduleName symbolImport hsModule]
 
 importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
-   sequenceA
-      [ maybe (Right NoImportChange)
-              (\sym -> importModuleWithSymbol moduleName sym hsModule)
-              symbolImport
-      , if qualified
-         then Right $ importQualifiedModule moduleName
-                                            (fromMaybe moduleName as)
-                                            hsModule
-         else Right $ maybe
-            NoImportChange
-            (\asName -> importModuleAs moduleName asName hsModule)
-            as
-      ]
+   [ maybe NoImportChange
+           (\sym -> importModuleWithSymbol moduleName sym hsModule)
+           symbolImport
+   , if qualified
+      then importQualifiedModule moduleName (fromMaybe moduleName as) hsModule
+      else maybe NoImportChange
+                 (\asName -> importModuleAs moduleName asName hsModule)
+                 as
+   ]
 
 -- | Checks whether the given import declaration is unqualified and
 -- contains an import spec list.
@@ -83,56 +80,60 @@ importModule moduleName module_
            Nothing      -> AddImportAtEnd (importDecl moduleName)
 
 
-existingMatching :: [ImportDecl] -> String -> SymbolImport -> Either Error ImportChange
+existingMatching :: [ImportDecl] -> String -> SymbolImport -> ImportChange
 existingMatching matching moduleName symbolImport
-   | Just impDecl <- find hasEntireModuleImported matching =
+   | Just impDecl <- find hasEntireModuleImported matching
+   =
       -- There is a module import
-      if isHiding symbolImport
-         then
-            -- We add a hiding clause, since we only want to hide a very specific symbol.
-            Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) (setSymbol impDecl symbolImport)
-
-         else
-            -- If we want to import a symbol, we dont have to, since it is already imported.
-            Right $ NoImportChange
-
-   | any (hasSymbols symbolImport) matching =
+     if isHiding symbolImport
+      then
+                                       -- We add a hiding clause, since we only want to hide a very specific symbol.
+           ReplaceImportAt (srcSpan . HS.ann $ impDecl)
+                           (setSymbol impDecl symbolImport)
+      else
+                                       -- If we want to import a symbol, we dont have to, since it is already imported.
+           NoImportChange
+   | any (hasSymbols symbolImport) matching
+   =
       -- The symbol we want to import/hide is already imported/hidden.
-      Right $ NoImportChange
-   | otherwise =
-      case find (hasAnySymbols $ isHiding symbolImport) matching of
-         Just impDecl ->
-            -- There is a fitting import declaration to which we can add the symbol to.
-            Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) (addSymbol impDecl symbolImport)
+     NoImportChange
+   | otherwise
+   = case find (hasAnySymbols $ isHiding symbolImport) matching of
+      Just impDecl ->
+         -- There is a fitting import declaration to which we can add the symbol to.
+                      ReplaceImportAt (srcSpan . HS.ann $ impDecl)
+                                      (addSymbol impDecl symbolImport)
 
-         Nothing      ->
-            -- The symbol is either not imported/hidden or another import
-            -- hides/imports it.
-            -- If something explictly imports the symbol, we remove it from the import list.
-            -- If something explictly hides the symbol, we remove it from the hiding list.
-            case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
-               Just impDecl -> do
-                  -- There is a import declaration that imports/hides the symbol we want to hide/import.
-                  symbolList <- removeSymbol impDecl symbolImport
-                  Right $ ReplaceImportAt (srcSpan . HS.ann $ impDecl) symbolList
+      Nothing ->
+         -- The symbol is either not imported/hidden or another import
+         -- hides/imports it.
+         -- If something explictly imports the symbol, we remove it from the import list.
+         -- If something explictly hides the symbol, we remove it from the hiding list.
+         case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
+            Just impDecl ->
+               -- There is a import declaration that imports/hides the symbol we want to hide/import.
+                            case removeSymbol impDecl symbolImport of
+               Left err -> ImportError err
+               Right symbolList ->
+                  ReplaceImportAt (srcSpan . HS.ann $ impDecl) symbolList
 
-               Nothing ->
-                  -- Symbol is not mentioned at all.
-                  Right $ FindImportPos $ importDeclWithSymbol moduleName symbolImport
+            Nothing ->
+               -- Symbol is not mentioned at all.
+               FindImportPos $ importDeclWithSymbol moduleName symbolImport
 
-importModuleWithSymbol :: String -> SymbolImport -> Module -> Either Error ImportChange
+importModuleWithSymbol :: String -> SymbolImport -> Module -> ImportChange
 importModuleWithSymbol moduleName symbolImport module_
    | matching@(_:_) <- matchingImports moduleName (importDecls module_) =
       -- There is already a matching import line
       existingMatching matching moduleName symbolImport
 
    | not $ null (importDecls module_) =
-      Right $ FindImportPos $ importDeclWithSymbol moduleName symbolImport
+      FindImportPos $ importDeclWithSymbol moduleName symbolImport
 
    | otherwise =
       case srcLineForNewImport module_ of
-           Just srcLine -> Right $ AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
-           Nothing      -> Right $ AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
+           Just srcLine -> AddImportAfter srcLine (importDeclWithSymbol moduleName symbolImport)
+           Nothing      -> AddImportAtEnd (importDeclWithSymbol moduleName symbolImport)
 
 -- | Extend the spec list with the given symbol.
 -- Might result in duplciates.
