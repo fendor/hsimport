@@ -25,15 +25,15 @@ data ImportChange
    | FindImportPos ImportDecl           -- ^ search for an insert position for the import declaration
    | NoImportChange                     -- ^ no changes of the import declarations
    | ImportError Error                  -- ^ Some import change would cause an incosistent result
-                                        -- ^ thus, report the error. Other changes should not be applied.
+                                        -- thus, report the error. Other changes should not be applied.
    deriving (Show)
 
 importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
 importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
-   [importModule moduleName hsModule]
+   [ importModule moduleName hsModule ]
 
 importChanges (ModuleImport moduleName False Nothing) (Just symbolImport) hsModule =
-   [importModuleWithSymbol moduleName symbolImport hsModule]
+   [ importModuleWithSymbol moduleName symbolImport hsModule ]
 
 importChanges (ModuleImport moduleName qualified as) symbolImport hsModule =
    [ maybe NoImportChange
@@ -84,14 +84,14 @@ existingMatching :: [ImportDecl] -> String -> SymbolImport -> ImportChange
 existingMatching matching moduleName symbolImport
    | Just impDecl <- find hasEntireModuleImported matching
    =
-      -- There is a module import
+     -- There is a module import
      if isHiding symbolImport
       then
-                                       -- We add a hiding clause, since we only want to hide a very specific symbol.
+           -- We add a hiding clause, since we only want to hide a very specific symbol.
            ReplaceImportAt (srcSpan . HS.ann $ impDecl)
                            (setSymbol impDecl symbolImport)
       else
-                                       -- If we want to import a symbol, we dont have to, since it is already imported.
+           -- If we want to import a symbol, we dont have to, since it is already imported.
            NoImportChange
    | any (hasSymbols symbolImport) matching
    =
@@ -101,8 +101,8 @@ existingMatching matching moduleName symbolImport
    = case find (hasAnySymbols $ isHiding symbolImport) matching of
       Just impDecl ->
          -- There is a fitting import declaration to which we can add the symbol to.
-                      ReplaceImportAt (srcSpan . HS.ann $ impDecl)
-                                      (addSymbol impDecl symbolImport)
+         ReplaceImportAt (srcSpan . HS.ann $ impDecl)
+                         (addSymbol impDecl symbolImport)
 
       Nothing ->
          -- The symbol is either not imported/hidden or another import
@@ -112,10 +112,10 @@ existingMatching matching moduleName symbolImport
          case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
             Just impDecl ->
                -- There is a import declaration that imports/hides the symbol we want to hide/import.
-                            case removeSymbol impDecl symbolImport of
-               Left err -> ImportError err
-               Right symbolList ->
-                  ReplaceImportAt (srcSpan . HS.ann $ impDecl) symbolList
+               case removeSymbol impDecl symbolImport of
+                  Left err -> ImportError err
+                  Right symbolList ->
+                     ReplaceImportAt (srcSpan . HS.ann $ impDecl) symbolList
 
             Nothing ->
                -- Symbol is not mentioned at all.
