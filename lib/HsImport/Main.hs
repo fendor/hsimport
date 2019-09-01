@@ -8,8 +8,10 @@ module HsImport.Main
 import Control.Monad (when)
 import System.Exit (exitFailure, exitSuccess)
 import System.IO (hPutStrLn, stderr)
-import Data.Maybe (isJust)
-import Data.List (foldl')
+import Data.Maybe (isJust, mapMaybe)
+import           Data.List                      ( foldl'
+                                                , partition
+                                                )
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Config.Dyre as Dyre
@@ -52,17 +54,23 @@ hsimportWithArgs config args = do
    maybeSpec <- hsImportSpec args
    case maybeSpec of
         Left  error -> return $ Just error
-        Right spec  -> hsimportWithSpec config spec >> return Nothing
+        Right spec  -> hsimportWithSpec config spec
 
 
-hsimportWithSpec :: Config -> HsImportSpec -> IO ()
+hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe Error)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
+   case partition isImportError impChanges of
+      
+      ([], changes) -> do
+         srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
+         let srcLines' = applyChanges srcLines changes
+         when (srcLines' /= srcLines || isJust (saveToFile spec)) $
+            TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+         return Nothing
 
-   srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
-   let srcLines' = applyChanges srcLines impChanges
-   when (srcLines' /= srcLines || isJust (saveToFile spec)) $
-      TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+      (errors, _) ->
+         return (Just (unlines $ mapMaybe importErrorToError errors))
 
    where
       applyChanges = foldl' applyChange
@@ -91,8 +99,18 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       applyChange srcLines NoImportChange = srcLines
 
+      applyChange _ (ImportError _) = error "hsimportWithSpec.ImportError: encountered an ImportError although there should "
+
       outputFile spec
          | Just file <- saveToFile spec = file
          | otherwise                    = sourceFile spec
 
       allImportDecls = importDecls $ parsedSrcFile spec
+
+isImportError :: ImportChange -> Bool
+isImportError (ImportError _) = True
+isImportError _ = False
+
+importErrorToError :: ImportChange -> Maybe Error
+importErrorToError (ImportError err) = Just err
+importErrorToError _ = Nothing

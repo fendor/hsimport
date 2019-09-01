@@ -56,6 +56,7 @@ moduleTests = testGroup "Module Tests"
    , test "ModuleTest35" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest36" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
    , test "ModuleTest37" $ HI.defaultArgs { HI.moduleName = "Control.Monad" }
+   , test "ModuleTest38" $ HI.defaultArgs { HI.moduleName = "Data.Text" }
    ]
 
 
@@ -102,6 +103,17 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest38" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A", "B", "C"], HI.hiding = True }
    , test "SymbolTest39" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.as = "T", HI.hiding = True }
    , test "SymbolTest40" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A", "B", "C"], HI.as = "T", HI.hiding = True }
+   , test "SymbolTest41" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "t", HI.hiding = True }
+   , test "SymbolTest42" $ HI.defaultArgs { HI.moduleName = "Control.Applicative", HI.symbolName = "z", HI.hiding = True }
+   , test "SymbolTest43" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf" }
+   , test "SymbolTest44" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.hiding = True }
+   , test "SymbolTest45" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
+   , test "SymbolTest46" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
+   , test "SymbolTest47" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.all = True, HI.hiding = True }
+   , test "SymbolTest48" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf" }
+   , test "SymbolTest49" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.hiding = True }
+   , test "SymbolTest50" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["B", "C"], HI.hiding = True }
+   , test "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
    ]
 
 
