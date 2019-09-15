@@ -68,7 +68,7 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
          return Nothing
 
       (errors, _) ->
-         return (Just (unlines $ mapMaybe importErrorToError errors))
+         return (Just (unlines $ mapMaybe toErrorMessage errors))
 
    where
       applyChanges = foldl' applyChange
@@ -109,6 +109,6 @@ isImportError :: ImportChange -> Bool
 isImportError (ImportError _) = True
 isImportError _ = False
 
-importErrorToError :: ImportChange -> Maybe ErrorMessage
-importErrorToError (ImportError err) = Just err
-importErrorToError _ = Nothing
+toErrorMessage :: ImportChange -> Maybe ErrorMessage
+toErrorMessage (ImportError err) = Just err
+toErrorMessage _ = Nothing
