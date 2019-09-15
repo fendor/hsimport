@@ -1,0 +1,4 @@
+" otherwise ghcid and quickfox doesn't work for the relative error paths of ghc
+set noautochdir
+
+let g:ghcid_command = 'cabal new-repl library-internal'
