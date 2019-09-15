@@ -104,11 +104,3 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
          | otherwise                    = sourceFile spec
 
       allImportDecls = importDecls $ parsedSrcFile spec
-
-hasImportError :: ImportChange -> Bool
-hasImportError (ImportError _) = True
-hasImportError _ = False
-
-toErrorMessage :: ImportChange -> Maybe ErrorMessage
-toErrorMessage (ImportError err) = Just err
-toErrorMessage _ = Nothing

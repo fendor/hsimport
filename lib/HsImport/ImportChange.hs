@@ -4,6 +4,8 @@
 module HsImport.ImportChange
    ( ImportChange(..)
    , importChanges
+   , hasImportError
+   , toErrorMessage
    ) where
 
 import Data.Maybe
@@ -26,6 +28,14 @@ data ImportChange
    | NoImportChange                     -- ^ no changes of the import declarations
    | ImportError ErrorMessage           -- ^ import error
    deriving (Show)
+
+hasImportError :: ImportChange -> Bool
+hasImportError (ImportError _) = True
+hasImportError _ = False
+
+toErrorMessage :: ImportChange -> Maybe ErrorMessage
+toErrorMessage (ImportError err) = Just err
+toErrorMessage _ = Nothing
 
 importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
 importChanges (ModuleImport moduleName False Nothing) Nothing hsModule =
