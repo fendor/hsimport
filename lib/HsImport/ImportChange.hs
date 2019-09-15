@@ -95,13 +95,13 @@ existingMatching matching moduleName symbolImport
    =
      -- There is a module import
      if isHiding symbolImport
-      then
-           -- We add a hiding clause, since we only want to hide a very specific symbol.
-           ReplaceImportAt (srcSpan . HS.ann $ impDecl)
-                           (setSymbol impDecl symbolImport)
-      else
-           -- If we want to import a symbol, we dont have to, since it is already imported.
-           NoImportChange
+        then
+             -- We add a hiding clause, since we only want to hide a very specific symbol.
+             ReplaceImportAt (srcSpan . HS.ann $ impDecl)
+                             (setSymbol impDecl symbolImport)
+        else
+             -- If we want to import a symbol, we dont have to, since it is already imported.
+             NoImportChange
    | any (hasSymbols symbolImport) matching
    =
       -- The symbol we want to import/hide is already imported/hidden.
@@ -194,15 +194,15 @@ removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
         else Right $ Just t
 
   removeSymbols (AllOf symName) t@(HS.IThingWith a hsSymName _) =
-      if symName == nameString hsSymName
-         -- Remove all used constructors
-         then Right $ Just (HS.IThingWith a hsSymName [])
-         else Right $ Just t
+     if symName == nameString hsSymName
+        -- Remove all used constructors
+        then Right $ Just (HS.IThingWith a hsSymName [])
+        else Right $ Just t
 
   removeSymbols sym spec =
-      if imports sym spec
-         then Right $ Nothing
-         else Right $ Just spec
+     if imports sym spec
+        then Right $ Nothing
+        else Right $ Just spec
 
   removeFromList :: [String] -> [CName] -> [CName]
   removeFromList names = filter ((`notElem` names) . nameString . toName)
