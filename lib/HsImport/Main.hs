@@ -9,9 +9,7 @@ import Control.Monad (when)
 import System.Exit (exitFailure, exitSuccess)
 import System.IO (hPutStrLn, stderr)
 import Data.Maybe (isJust, mapMaybe)
-import           Data.List                      ( foldl'
-                                                , partition
-                                                )
+import Data.List (foldl', partition)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Config.Dyre as Dyre
