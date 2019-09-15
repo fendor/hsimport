@@ -6,6 +6,7 @@ import Test.Tasty.Golden
 import System.FilePath
 import System.IO (hPutStrLn, stderr)
 import Data.List (intercalate)
+import qualified Data.ByteString.Lazy.UTF8 as BS
 import qualified Language.Haskell.Exts as HS
 import qualified HsImport as HI
 import qualified HsImport.Parse as HIP
@@ -113,7 +114,7 @@ symbolTests = testGroup "Symbol Tests"
    , test "SymbolTest48" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "isInfixOf" }
    , test "SymbolTest49" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.hiding = True }
    , test "SymbolTest50" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["B", "C"], HI.hiding = True }
-   , test "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
+   , failedTest "SymbolTest51" $ HI.defaultArgs { HI.moduleName = "Data.Text", HI.symbolName = "Text", HI.with = ["A"], HI.hiding = True }
    ]
 
 
@@ -134,6 +135,21 @@ parseTests = testGroup "Parse Tests"
 
 test :: String -> HI.HsImportArgs -> TestTree
 test testName args = configTest testName HI.defaultConfig args
+
+
+failedTest :: String -> HI.HsImportArgs -> TestTree
+failedTest testName args =
+   goldenVsStringDiff testName diff goldenFile command
+   where
+      command = do
+         Just message <- HI.hsimportWithArgs HI.defaultConfig (args { HI.inputSrcFile = inputFile, HI.outputSrcFile = outputFile })
+         return . BS.fromString $ message
+
+      diff ref new = ["diff", "-u", ref, new]
+
+      goldenFile = "tests" </> "goldenFiles" </> testName <.> "hs"
+      outputFile = "tests" </> "outputFiles" </> testName <.> "hs"
+      inputFile  = "tests" </> "inputFiles"  </> testName <.> "hs"
 
 
 configTest :: String -> HI.Config -> HI.HsImportArgs -> TestTree
