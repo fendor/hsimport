@@ -23,7 +23,7 @@ data HsImportSpec = HsImportSpec
    } deriving (Show)
 
 
-hsImportSpec :: HsImportArgs -> IO (Either Error HsImportSpec)
+hsImportSpec :: HsImportArgs -> IO (Either ErrorMessage HsImportSpec)
 hsImportSpec args
    | Just error <- checkArgs args = return $ Left error
    | otherwise = do

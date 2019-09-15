@@ -17,7 +17,7 @@ import Control.Applicative ((<$>))
 
 import HsImport.Types
 
-parseFile :: FilePath -> IO (Either Error ParseResult)
+parseFile :: FilePath -> IO (Either ErrorMessage ParseResult)
 parseFile file = do
    srcFile <- replaceCpp . T.unpack <$> TIO.readFile file
    catch (do let result = parseFileContents srcFile

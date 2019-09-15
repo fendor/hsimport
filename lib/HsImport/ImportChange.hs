@@ -24,8 +24,7 @@ data ImportChange
    | AddImportAtEnd ImportDecl          -- ^ add import declaration at end of source file
    | FindImportPos ImportDecl           -- ^ search for an insert position for the import declaration
    | NoImportChange                     -- ^ no changes of the import declarations
-   | ImportError Error                  -- ^ Some import change would cause an incosistent result
-                                        -- thus, report the error. Other changes should not be applied.
+   | ImportError ErrorMessage           -- ^ import error
    deriving (Show)
 
 importChanges :: ModuleImport -> Maybe SymbolImport -> Module -> [ImportChange]
@@ -148,7 +147,7 @@ extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
 removeSpecList
    :: SymbolImport
    -> HS.ImportSpecList Annotation
-   -> Either Error (Maybe (HS.ImportSpecList Annotation))
+   -> Either ErrorMessage (Maybe (HS.ImportSpecList Annotation))
 removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
    let specListRemovedSymbol =
              traverse (removeSymbols (symbol symbolImport)) specs
@@ -159,7 +158,7 @@ removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
                                                 (catMaybes specList)
 
  where
-  removeSymbols :: Symbol -> ImportSpec -> Either Error (Maybe ImportSpec)
+  removeSymbols :: Symbol -> ImportSpec -> Either ErrorMessage (Maybe ImportSpec)
   removeSymbols (SomeOf symName _) t@(HS.IThingAll _ name) =
      if symName == nameString name
         then Left $ unlines
@@ -217,7 +216,7 @@ setSymbol id@HS.ImportDecl {HS.importAnn = importAnn } symbolImport =
 
 -- | Remove a symbol from the import declaration.
 -- May remove the whole spec list if the list is empty after removal.
-removeSymbol :: ImportDecl -> SymbolImport -> Either Error ImportDecl
+removeSymbol :: ImportDecl -> SymbolImport -> Either ErrorMessage ImportDecl
 removeSymbol id@HS.ImportDecl {HS.importSpecs = specs} symbolImport =
    case specs & _Just %~ removeSpecList symbolImport of
       Nothing -> Right id {HS.importSpecs = Nothing }

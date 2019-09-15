@@ -22,6 +22,7 @@ import HsImport.ImportPos (ImportPos(..))
 import qualified HsImport.Args as Args
 import HsImport.Config
 import HsImport.Utils
+import HsImport.Types
 
 #if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>))
@@ -48,8 +49,7 @@ hsimport = Dyre.wrapMain $ Dyre.defaultParams
               _        -> exitSuccess
 
 
-type Error = String
-hsimportWithArgs :: Config -> Args.HsImportArgs -> IO (Maybe Error)
+hsimportWithArgs :: Config -> Args.HsImportArgs -> IO (Maybe ErrorMessage)
 hsimportWithArgs config args = do
    maybeSpec <- hsImportSpec args
    case maybeSpec of
@@ -57,11 +57,11 @@ hsimportWithArgs config args = do
         Right spec  -> hsimportWithSpec config spec
 
 
-hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe Error)
+hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe ErrorMessage)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
    case partition isImportError impChanges of
-      
+
       ([], changes) -> do
          srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
          let srcLines' = applyChanges srcLines changes
@@ -111,6 +111,6 @@ isImportError :: ImportChange -> Bool
 isImportError (ImportError _) = True
 isImportError _ = False
 
-importErrorToError :: ImportChange -> Maybe Error
+importErrorToError :: ImportChange -> Maybe ErrorMessage
 importErrorToError (ImportError err) = Just err
 importErrorToError _ = Nothing
