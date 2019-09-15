@@ -58,7 +58,7 @@ hsimportWithArgs config args = do
 hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe ErrorMessage)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
-   case partition isImportError impChanges of
+   case partition hasImportError impChanges of
 
       ([], changes) -> do
          srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
@@ -105,9 +105,9 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       allImportDecls = importDecls $ parsedSrcFile spec
 
-isImportError :: ImportChange -> Bool
-isImportError (ImportError _) = True
-isImportError _ = False
+hasImportError :: ImportChange -> Bool
+hasImportError (ImportError _) = True
+hasImportError _ = False
 
 toErrorMessage :: ImportChange -> Maybe ErrorMessage
 toErrorMessage (ImportError err) = Just err
