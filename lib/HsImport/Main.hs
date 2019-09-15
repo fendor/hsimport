@@ -59,16 +59,15 @@ hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe ErrorMessage)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
    case partition hasImportError impChanges of
+        ([], changes) -> do
+           srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
+           let srcLines' = applyChanges srcLines changes
+           when (srcLines' /= srcLines || isJust (saveToFile spec)) $
+              TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+           return Nothing
 
-      ([], changes) -> do
-         srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
-         let srcLines' = applyChanges srcLines changes
-         when (srcLines' /= srcLines || isJust (saveToFile spec)) $
-            TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
-         return Nothing
-
-      (errors, _) ->
-         return (Just (unlines $ mapMaybe toErrorMessage errors))
+        (errors, _) ->
+           return (Just (unlines $ mapMaybe toErrorMessage errors))
 
    where
       applyChanges = foldl' applyChange
@@ -97,7 +96,7 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       applyChange srcLines NoImportChange = srcLines
 
-      applyChange _ (ImportError _) = error "hsimportWithSpec.ImportError: encountered an ImportError although there should "
+      applyChange _ (ImportError _) = error "hsimportWithSpec: unexpected 'ImportError'"
 
       outputFile spec
          | Just file <- saveToFile spec = file
