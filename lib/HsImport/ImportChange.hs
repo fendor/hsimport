@@ -11,7 +11,7 @@ import Data.List (find, (\\))
 import Lens.Micro
 import qualified Language.Haskell.Exts as HS
 import qualified Data.Attoparsec.Text as A
-import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isHiding, swapImport)
+import HsImport.SymbolImport (SymbolImport(..), Symbol(..), symbol, isHiding, toggleHiding)
 import HsImport.ModuleImport (ModuleImport(..))
 import HsImport.ImportPos (matchingImports)
 import HsImport.Utils
@@ -109,7 +109,7 @@ existingMatching matching moduleName symbolImport
          -- hides/imports it.
          -- If something explictly imports the symbol, we remove it from the import list.
          -- If something explictly hides the symbol, we remove it from the hiding list.
-         case find (hasSymbolsOverlap (swapImport symbolImport)) matching of
+         case find (hasSymbolsOverlap (toggleHiding symbolImport)) matching of
             Just impDecl ->
                -- There is a import declaration that imports/hides the symbol we want to hide/import.
                case removeSymbol impDecl symbolImport of

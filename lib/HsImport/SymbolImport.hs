@@ -4,7 +4,7 @@ module HsImport.SymbolImport
    , Symbol(..)
    , symbol
    , isHiding
-   , swapImport
+   , toggleHiding
    )
 where
 
@@ -34,8 +34,8 @@ isHiding :: SymbolImport -> Bool
 isHiding (Hiding _) = True
 isHiding (Import _) = False
 
--- | Swap the import style from hiding to import list and vice versa.
-swapImport :: SymbolImport -> SymbolImport
-swapImport (Hiding s) = Import s
-swapImport (Import s) = Hiding s
+-- | Toogle the import style from hiding to import and vice versa.
+toggleHiding :: SymbolImport -> SymbolImport
+toggleHiding (Hiding s) = Import s
+toggleHiding (Import s) = Hiding s
 
