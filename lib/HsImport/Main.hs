@@ -37,37 +37,37 @@ hsimport = Dyre.wrapMain $ Dyre.defaultParams
       realMain :: Config -> IO ()
       realMain config = do
          case configError config of
-              Just error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
-              _          -> return ()
+            Just error -> hPutStrLn stderr ("hsimport: " ++ error) >> exitFailure
+            _          -> return ()
 
          args     <- Args.hsImportArgs
          maybeErr <- hsimportWithArgs config args
          case maybeErr of
-              Just err -> hPutStrLn stderr ("hsimport: " ++ err) >> exitFailure
-              _        -> exitSuccess
+            Just err -> hPutStrLn stderr ("hsimport: " ++ err) >> exitFailure
+            _        -> exitSuccess
 
 
 hsimportWithArgs :: Config -> Args.HsImportArgs -> IO (Maybe ErrorMessage)
 hsimportWithArgs config args = do
    maybeSpec <- hsImportSpec args
    case maybeSpec of
-        Left  error -> return $ Just error
-        Right spec  -> hsimportWithSpec config spec
+      Left  error -> return $ Just error
+      Right spec  -> hsimportWithSpec config spec
 
 
 hsimportWithSpec :: Config -> HsImportSpec -> IO (Maybe ErrorMessage)
 hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportPos } spec = do
    let impChanges = importChanges (moduleImport spec) (symbolImport spec) (parsedSrcFile spec)
    case partition hasImportError impChanges of
-        ([], changes) -> do
-           srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
-           let srcLines' = applyChanges srcLines changes
-           when (srcLines' /= srcLines || isJust (saveToFile spec)) $
-              TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
-           return Nothing
+       ([], changes) -> do
+          srcLines <- lines . T.unpack <$> TIO.readFile (sourceFile spec)
+          let srcLines' = applyChanges srcLines changes
+          when (srcLines' /= srcLines || isJust (saveToFile spec)) $
+             TIO.writeFile (outputFile spec) (T.pack $ unlines srcLines')
+          return Nothing
 
-        (errors, _) ->
-           return (Just (unlines $ mapMaybe toErrorMessage errors))
+       (errors, _) ->
+          return (Just (unlines $ mapMaybe toErrorMessage errors))
 
    where
       applyChanges = foldl' applyChange
@@ -87,12 +87,12 @@ hsimportWithSpec Config { prettyPrint = prettyPrint, findImportPos = findImportP
 
       applyChange srcLines (FindImportPos importDecl) =
          case findImportPos importDecl allImportDecls of
-              Just (After impDecl)  -> applyChange srcLines (AddImportAfter (lastSrcLine . HS.ann $ impDecl)
-                                                                            importDecl)
-              Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 ((firstSrcLine . HS.ann $ impDecl) - 1))
-                                                                            importDecl)
-              _                     -> applyChange srcLines (AddImportAfter (lastSrcLine . HS.ann . last $ allImportDecls)
-                                                                            importDecl)
+             Just (After impDecl)  -> applyChange srcLines (AddImportAfter (lastSrcLine . HS.ann $ impDecl)
+                                                                           importDecl)
+             Just (Before impDecl) -> applyChange srcLines (AddImportAfter (max 0 ((firstSrcLine . HS.ann $ impDecl) - 1))
+                                                                           importDecl)
+             _                     -> applyChange srcLines (AddImportAfter (lastSrcLine . HS.ann . last $ allImportDecls)
+                                                                           importDecl)
 
       applyChange srcLines NoImportChange = srcLines
 
