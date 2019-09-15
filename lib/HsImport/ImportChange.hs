@@ -146,7 +146,7 @@ importModuleWithSymbol moduleName symbolImport module_
 
 -- | Extend the spec list with the given symbol.
 -- Might result in duplciates.
-extendSpecList :: SymbolImport -> HS.ImportSpecList Annotation -> HS.ImportSpecList Annotation
+extendSpecList :: SymbolImport -> ImportSpecList -> ImportSpecList
 extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
    HS.ImportSpecList annotation hid (specs ++ [importSpec $ symbol symbolImport])
 
@@ -156,8 +156,8 @@ extendSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
 -- Removes duplicate imports.
 removeSpecList
    :: SymbolImport
-   -> HS.ImportSpecList Annotation
-   -> Either ErrorMessage (Maybe (HS.ImportSpecList Annotation))
+   -> ImportSpecList
+   -> Either ErrorMessage (Maybe (ImportSpecList))
 removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
    let specListRemovedSymbol =
              traverse (removeSymbols (symbol symbolImport)) specs
@@ -209,7 +209,7 @@ removeSpecList symbolImport (HS.ImportSpecList annotation hid specs) =
 
 
 -- | Set the spec list to the given symbol.
-setSpecList :: SymbolImport -> Annotation -> HS.ImportSpecList Annotation
+setSpecList :: SymbolImport -> Annotation -> ImportSpecList
 setSpecList symbolImport annotation =
    HS.ImportSpecList annotation (isHiding symbolImport) [importSpec $ symbol symbolImport]
 
