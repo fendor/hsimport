@@ -1,6 +1,8 @@
 hsimport
 ========
 
+[![Build Status](https://travis-ci.org/fendor/hsimport.svg?branch=master)](https://travis-ci.org/fendor/hsimport)
+
 A command line program for extending the import list of a Haskell source file.
 
 `hsimport` gets the module name and the symbol name to import as arguments,
