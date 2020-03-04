@@ -45,7 +45,7 @@ Configuration
 -------------
 
 The easiest way to configure `hsimport` is by creating a `cabal` project.
-An example for this is [here](<https://github.com/dan-t/hsimport-config>).
+An example for this is [here](<https://github.com/fendor/hsimport-config>).
 
 
 The other way - which most likely isn't worth the hassle - is by writting a `~/.config/hsimport/hsimport.hs` file:
@@ -101,7 +101,7 @@ Command Line Usage
     hsimport [OPTIONS] [SOURCEFILE]
       A command line program for extending the import list of a Haskell source
       file.
-    
+
     Common flags:
       -m --modulename=ITEM     The module to import
       -s --symbolname=ITEM     The symbol to import, if empty, the entire module
