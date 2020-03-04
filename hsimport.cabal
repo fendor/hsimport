@@ -6,7 +6,7 @@ license-file: LICENSE
 maintainer: daniel.trstenjak@gmail.com
 author: Daniel Trstenjak
 tested-with: ghc ==7.6.2 ghc ==7.6.3 ghc ==7.8.3 ghc ==7.10.1
-             ghc ==7.10.2 ghc ==8.0.1 ghc ==8.2.1 ghc ==8.4.2 ghc ==8.6.3
+             ghc ==7.10.2 ghc ==8.0.1 ghc ==8.2.1 ghc ==8.4.2 ghc ==8.6.3 ghc ==8.6.5
 synopsis: Extend the import list of a Haskell source file
 description:
     A command line program for extending the import list of a Haskell source file.
