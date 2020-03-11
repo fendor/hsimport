@@ -2,6 +2,7 @@ hsimport
 ========
 
 [![Build Status](https://travis-ci.org/fendor/hsimport.svg?branch=master)](https://travis-ci.org/fendor/hsimport)
+[![Hackage](http://img.shields.io/hackage/v/hsimport.svg)](https://hackage.haskell.org/package/hsimport)
 
 A command line program for extending the import list of a Haskell source file.
 
