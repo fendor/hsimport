@@ -21,7 +21,7 @@ data Config = Config
 
 defaultConfig :: Config
 defaultConfig = Config
-   { prettyPrint   = PP.prettyPrint
+   { prettyPrint   = PP.prettyPrint undefined
    , findImportPos = IP.findImportPos
    , configError   = Nothing
    }

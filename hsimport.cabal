@@ -53,6 +53,7 @@ library
     , directory         >=1.2.0.1  && <1.4
     , dyre              ^>=0.8
     , haskell-src-exts  >=1.18.0   && <1.24
+    , ghc-lib-parser
     , ilist             >=0.1      && <0.4
     , microlens         ^>=0.4
     , mtl               >=2.1.2    && <2.3
@@ -88,6 +89,7 @@ library library-internal
     , directory
     , dyre
     , haskell-src-exts
+    , ghc-lib-parser
     , ilist
     , microlens
     , mtl

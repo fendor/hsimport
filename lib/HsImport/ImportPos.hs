@@ -7,7 +7,9 @@ module HsImport.ImportPos
    , bestMatchingImport
    ) where
 
-import qualified Language.Haskell.Exts as HS
+import qualified HsSyn as HS
+import qualified Module as HS
+import qualified SrcLoc as HS
 import Data.List.Index (ifoldl')
 import Data.List.Split (splitOn)
 import HsImport.Types
@@ -19,22 +21,22 @@ import Control.Applicative ((<$>))
 -- | Where a new import declaration should be added.
 data ImportPos = Before ImportDecl -- ^ before the specified import declaration
                | After  ImportDecl -- ^ after the specified import declaration
-               deriving (Show, Eq)
+               
 
 
 -- | Returns the position where the import declaration for the
 --   new import should be put into the list of import declarations.
 findImportPos :: ImportDecl -> [ImportDecl] -> Maybe ImportPos
-findImportPos newImport imports = After <$> bestMatchingImport name imports
+findImportPos (HS.L _ newImport) imports = After <$> bestMatchingImport moduleName imports
    where
-      HS.ModuleName _ name = HS.importModule newImport
+      HS.L _ moduleName = HS.ideclName newImport
 
 
 -- | Returns all import declarations having the same module name.
 matchingImports :: ModuleName -> [ImportDecl] -> [ImportDecl]
 matchingImports moduleName imports =
    [ i
-   | i@HS.ImportDecl {HS.importModule = HS.ModuleName _ name} <- imports
+   | i@(HS.L _ HS.ImportDecl {HS.ideclName = HS.L _ name}) <- imports
    , moduleName == name
    ]
 
@@ -68,7 +70,7 @@ bestMatchingImport moduleName imports =
                   loop num [] _ = num
                   loop num _ [] = num
 
-      splittedMod  = splitOn "." moduleName
-      splittedMods = [ splitOn "." name
-                     | HS.ImportDecl {HS.importModule = HS.ModuleName _ name} <- imports
+      splittedMod  = splitOn "." $ HS.moduleNameString moduleName
+      splittedMods = [ splitOn "." $ HS.moduleNameString name
+                     | (HS.L _ HS.ImportDecl {HS.ideclName = HS.L _ name}) <- imports
                      ]
