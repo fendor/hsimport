@@ -28,11 +28,11 @@ import Control.Applicative ((<$>))
 
 
 hsimport :: Config -> IO ()
-hsimport = Dyre.wrapMain $ Dyre.defaultParams
-   { Dyre.projectName = "hsimport"
-   , Dyre.realMain    = realMain
-   , Dyre.showError   = \config err -> config { configError = Just err }
-   }
+hsimport = Dyre.wrapMain $
+   Dyre.newParams
+      "hsimport"
+      realMain
+      (\config err -> config { configError = Just err })
    where
       realMain :: Config -> IO ()
       realMain config = do
