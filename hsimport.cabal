@@ -5,7 +5,7 @@ license:            BSD3
 license-file:       LICENSE
 maintainer:         power.walross@gmail.com
 author:             Daniel Trstenjak
-tested-with:        GHC ==8.2.1 || ==8.4.2 || ==8.6.3 || ==8.6.5
+tested-with:        GHC ==8.4.4 || ==8.6.5 || ==8.8.4 || ==8.10.2
 synopsis:           Extend the import list of a Haskell source file
 description:
   A command line program for extending the import list of a Haskell source file.
